@@ -1819,34 +1819,257 @@ input, select, textarea {
 
 /* === SURPRISE Marquee Light === */
 .surprise-light {
+    display: none;
+}
+
+/* === SURPRISE Overlay === */
+.surprise-overlay {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40vh;
+    min-height: 220px;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    overflow: hidden;
+}
+
+.surprise-overlay.active {
+    opacity: 1;
+}
+
+.surprise-glow {
     position: absolute;
     bottom: 0;
-    left: -120%;
-    width: 80px;
-    height: 3px;
-    background: linear-gradient(90deg, transparent, rgba(34,197,94,0.6), #FFFFFF, rgba(34,197,94,0.6), transparent);
-    border-radius: 2px;
-    box-shadow: 0 0 14px rgba(34,197,94,0.7), 0 0 28px rgba(34,197,94,0.35);
-    z-index: 5;
-    pointer-events: none;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: radial-gradient(ellipse at center bottom, rgba(34,197,94,0.25) 0%, rgba(250,204,21,0.15) 40%, transparent 70%);
     opacity: 0;
-    transition: opacity 0.15s ease;
+    transition: opacity 0.6s ease;
 }
 
-.surprise-active .surprise-light {
-    animation: surpriseSweep 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+.surprise-overlay.active .surprise-glow {
+    opacity: 1;
 }
 
-.surprise-active {
-    border-bottom: 2px solid rgba(34,197,94,0.5);
-    box-shadow: 0 4px 16px rgba(34,197,94,0.15);
+/* Light Streaks */
+.surprise-streaks {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    opacity: 0;
 }
 
-@keyframes surpriseSweep {
-    0% { left: -120%; opacity: 0; }
-    8% { opacity: 1; }
-    92% { opacity: 1; }
-    100% { left: 120%; opacity: 0; }
+.surprise-overlay.active .surprise-streaks {
+    animation: fadeInStreaks 0.5s ease 0.2s forwards;
+}
+
+.streak {
+    position: absolute;
+    bottom: 0;
+    width: 4px;
+    height: 60%;
+    background: linear-gradient(to top, rgba(255,255,255,0.9), rgba(34,197,94,0.6), transparent);
+    border-radius: 2px;
+    opacity: 0;
+    box-shadow: 0 0 12px rgba(34,197,94,0.8), 0 0 24px rgba(250,204,21,0.5);
+}
+
+.surprise-overlay.active .streak:nth-child(1) { left: 10%; animation: streakRise 1.8s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards; }
+.surprise-overlay.active .streak:nth-child(2) { left: 25%; animation: streakRise 2s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards; }
+.surprise-overlay.active .streak:nth-child(3) { left: 40%; animation: streakRise 1.6s cubic-bezier(0.4, 0, 0.2, 1) 0.5s forwards; }
+.surprise-overlay.active .streak:nth-child(4) { left: 55%; animation: streakRise 2.2s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards; }
+.surprise-overlay.active .streak:nth-child(5) { left: 70%; animation: streakRise 1.9s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards; }
+.surprise-overlay.active .streak:nth-child(6) { left: 85%; animation: streakRise 2.1s cubic-bezier(0.4, 0, 0.2, 1) 0.15s forwards; }
+.surprise-overlay.active .streak:nth-child(7) { left: 50%; animation: streakRise 2.3s cubic-bezier(0.4, 0, 0.2, 1) 0.35s forwards; }
+.surprise-overlay.active .streak:nth-child(8) { left: 15%; animation: streakRise 1.7s cubic-bezier(0.4, 0, 0.2, 1) 0.55s forwards; }
+
+/* Bursts */
+.surprise-bursts {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    opacity: 0;
+}
+
+.surprise-overlay.active .surprise-bursts {
+    animation: fadeInBursts 0.3s ease 0.4s forwards;
+}
+
+.burst {
+    position: absolute;
+    bottom: 10%;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fff;
+    opacity: 0;
+    box-shadow: 0 0 20px 8px rgba(250,204,21,0.9), 0 0 40px 16px rgba(34,197,94,0.6);
+}
+
+.surprise-overlay.active .burst:nth-child(1) { left: 20%; animation: burstUp 2.2s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards; }
+.surprise-overlay.active .burst:nth-child(2) { left: 45%; animation: burstUp 2.5s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards; }
+.surprise-overlay.active .burst:nth-child(3) { left: 70%; animation: burstUp 2s cubic-bezier(0.4, 0, 0.2, 1) 0.6s forwards; }
+.surprise-overlay.active .burst:nth-child(4) { left: 35%; animation: burstUp 2.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards; }
+.surprise-overlay.active .burst:nth-child(5) { left: 60%; animation: burstUp 2.3s cubic-bezier(0.4, 0, 0.2, 1) 0.5s forwards; }
+
+/* Particles */
+.surprise-particles {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    opacity: 0;
+}
+
+.surprise-overlay.active .surprise-particles {
+    animation: fadeInParticles 0.4s ease 0.3s forwards;
+}
+
+.particle {
+    position: absolute;
+    bottom: 0;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    opacity: 0;
+}
+
+/* Keyframes */
+@keyframes fadeInStreaks {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInBursts {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInParticles {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes streakRise {
+    0% {
+        opacity: 0;
+        transform: translateY(0) scaleY(0.5);
+    }
+    15% {
+        opacity: 1;
+        transform: translateY(-10%) scaleY(1);
+    }
+    70% {
+        opacity: 0.8;
+        transform: translateY(-50%) scaleY(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-90%) scaleY(0.3);
+    }
+}
+
+@keyframes burstUp {
+    0% {
+        opacity: 0;
+        transform: translateY(0) scale(0.3);
+    }
+    20% {
+        opacity: 1;
+        transform: translateY(-15%) scale(1.2);
+    }
+    40% {
+        opacity: 1;
+        transform: translateY(-25%) scale(1.5);
+    }
+    60% {
+        opacity: 0.8;
+        transform: translateY(-20%) scale(1.3);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-35%) scale(0.2);
+    }
+}
+
+@keyframes particleFloat {
+    0% {
+        opacity: 0;
+        transform: translateY(0) translateX(0) scale(0);
+    }
+    20% {
+        opacity: 1;
+        transform: translateY(-20%) translateX(10px) scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: translateY(-40%) translateX(-15px) scale(0.8);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-80%) translateX(20px) scale(0.2);
+    }
+}
+
+/* Horizontal Sweep */
+.surprise-overlay::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: -100%;
+    width: 60%;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(34,197,94,0.8), #fff, rgba(34,197,94,0.8), transparent);
+    border-radius: 2px;
+    box-shadow: 0 0 20px rgba(34,197,94,0.9), 0 0 40px rgba(250,204,21,0.6);
+    opacity: 0;
+}
+
+.surprise-overlay.active::after {
+    animation: horizontalSweep 2s cubic-bezier(0.4, 0, 0.2, 1) 0.1s forwards;
+}
+
+@keyframes horizontalSweep {
+    0% { left: -100%; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { left: 100%; opacity: 0; }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .surprise-overlay,
+    .surprise-overlay.active,
+    .surprise-overlay.active .streak,
+    .surprise-overlay.active .burst,
+    .surprise-overlay.active .surprise-glow,
+    .surprise-overlay.active .surprise-streaks,
+    .surprise-overlay.active .surprise-bursts,
+    .surprise-overlay.active .surprise-particles,
+    .surprise-overlay.active::after,
+    .particle {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .surprise-overlay.active {
+        opacity: 1;
+    }
+
+    .surprise-overlay.active .streak,
+    .surprise-overlay.active .burst {
+        opacity: 0.6;
+    }
 }
 
 /* === Copyright Bar === */
@@ -1984,22 +2207,26 @@ input, select, textarea {
 
 /* === Reduced Motion === */
 @media (prefers-reduced-motion: reduce) {
-    .surprise-light {
+    .surprise-overlay,
+    .surprise-overlay.active,
+    .surprise-overlay.active .streak,
+    .surprise-overlay.active .burst,
+    .surprise-overlay.active .surprise-glow,
+    .surprise-overlay.active .surprise-streaks,
+    .surprise-overlay.active .surprise-bursts,
+    .surprise-overlay.active .surprise-particles,
+    .surprise-overlay.active::after,
+    .particle {
         animation: none !important;
         transition: none !important;
     }
 
-    .surprise-active .surprise-light {
+    .surprise-overlay.active {
         opacity: 1;
-        left: 50%;
-        transform: translateX(-50%);
     }
 
-    .developer-card,
-    .social-links a,
-    .footer-links a,
-    .btn-facebook,
-    .btn-surprise {
-        transition: none !important;
+    .surprise-overlay.active .streak,
+    .surprise-overlay.active .burst {
+        opacity: 0.6;
     }
 }

@@ -113,7 +113,6 @@
                     <h5>Sandesh Bhandari</h5>
                     <span class="dev-role">Developer</span>
                     <button class="btn btn-surprise btn-xs" id="surpriseBtn" aria-label="Contact Sandesh Bhandari">SURPRISE</button>
-                    <div class="surprise-light" aria-hidden="true"></div>
                 </div>
 
                 <!-- Developer 4 -->
@@ -136,6 +135,29 @@
                 <p>&copy; 2026 Seed 2 Greens. All rights reserved.</p>
                 <p class="footer-made">Made with 🌱 for a greener future.</p>
             </div>
+        </div>
+    </div>
+
+    <!-- SURPRISE Light Overlay -->
+    <div class="surprise-overlay" id="surpriseOverlay" aria-hidden="true">
+        <div class="surprise-glow"></div>
+        <div class="surprise-particles" id="surpriseParticles"></div>
+        <div class="surprise-streaks">
+            <span class="streak"></span>
+            <span class="streak"></span>
+            <span class="streak"></span>
+            <span class="streak"></span>
+            <span class="streak"></span>
+            <span class="streak"></span>
+            <span class="streak"></span>
+            <span class="streak"></span>
+        </div>
+        <div class="surprise-bursts">
+            <span class="burst"></span>
+            <span class="burst"></span>
+            <span class="burst"></span>
+            <span class="burst"></span>
+            <span class="burst"></span>
         </div>
     </div>
 </footer>

@@ -405,37 +405,58 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(fetchWeather, WEATHER_CACHE_MS);
 })();
 
-/* === SURPRISE Marquee Light for Sandesh Bhandari === */
+/* === SURPRISE Diwali Light Effect for Sandesh Bhandari === */
 (function() {
     const surpriseBtn = document.getElementById('surpriseBtn');
-    const sandeshCard = document.getElementById('sandeshCard');
-    
-    if (!surpriseBtn || !sandeshCard) return;
-    
+    const overlay = document.getElementById('surpriseOverlay');
+    const particlesContainer = document.getElementById('surpriseParticles');
+
+    if (!surpriseBtn || !overlay || !particlesContainer) return;
+
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    
-    function triggerSurprise() {
-        if (sandeshCard.classList.contains('surprise-active')) return;
-        
-        sandeshCard.classList.add('surprise-active');
-        
-        if (prefersReducedMotion) {
-            const light = sandeshCard.querySelector('.surprise-light');
-            if (light) {
-                light.style.opacity = '1';
-                light.style.left = '50%';
-                light.style.transform = 'translateX(-50%)';
-            }
-            setTimeout(function() {
-                sandeshCard.classList.remove('surprise-active');
-            }, 1500);
-        } else {
-            setTimeout(function() {
-                sandeshCard.classList.remove('surprise-active');
-            }, 2600);
+
+    function createParticles() {
+        particlesContainer.innerHTML = '';
+        const colors = ['#22C55E', '#FACC15', '#FFFFFF', '#4ADE80', '#FDE047', '#86EFAC'];
+        for (let i = 0; i < 50; i++) {
+            const particle = document.createElement('span');
+            particle.className = 'particle';
+            const size = Math.random() * 6 + 3;
+            const left = Math.random() * 100;
+            const delay = Math.random() * 1.5;
+            const duration = Math.random() * 1.5 + 1.5;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+
+            particle.style.cssText = `
+                left: ${left}%;
+                width: ${size}px;
+                height: ${size}px;
+                background: ${color};
+                box-shadow: 0 0 ${size * 2}px ${color};
+                animation: particleFloat ${duration}s cubic-bezier(0.4, 0, 0.2, 1) ${delay}s forwards;
+            `;
+
+            particlesContainer.appendChild(particle);
         }
     }
-    
+
+    function triggerSurprise() {
+        if (overlay.classList.contains('active')) {
+            overlay.classList.remove('active');
+            setTimeout(function() {
+                createParticles();
+                overlay.classList.add('active');
+            }, 100);
+        } else {
+            createParticles();
+            overlay.classList.add('active');
+        }
+
+        setTimeout(function() {
+            overlay.classList.remove('active');
+        }, 3000);
+    }
+
     surpriseBtn.addEventListener('click', function(e) {
         e.preventDefault();
         triggerSurprise();
