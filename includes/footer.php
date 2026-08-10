@@ -89,9 +89,10 @@
             <div class="developers-grid">
                 <!-- Developer 1 -->
                 <div class="developer-card">
-                    <div class="dev-avatar"><i class="fas fa-user"></i></div>
+                    <div class="dev-avatar">
+                        <img src="img/sanskar-sharma.jpeg" alt="Sanskar Sharma">
+                    </div>
                     <h5>Sanskar Sharma</h5>
-                    <span class="dev-role">Developer</span>
                     <a href="https://www.facebook.com/sanskar.sharma.639786" target="_blank" rel="noopener noreferrer" class="btn btn-facebook btn-xs" aria-label="Connect with Sanskar Sharma on Facebook">
                         <i class="fab fa-facebook-f"></i> Connect
                     </a>
@@ -99,9 +100,10 @@
 
                 <!-- Developer 2 -->
                 <div class="developer-card">
-                    <div class="dev-avatar"><i class="fas fa-user"></i></div>
+                    <div class="dev-avatar">
+                        <img src="img/yubesh-joshi.jpeg" alt="Yubesh Joshi">
+                    </div>
                     <h5>Yubesh Joshi</h5>
-                    <span class="dev-role">Developer</span>
                     <a href="https://www.facebook.com/yubesh.joshi" target="_blank" rel="noopener noreferrer" class="btn btn-facebook btn-xs" aria-label="Connect with Yubesh Joshi on Facebook">
                         <i class="fab fa-facebook-f"></i> Connect
                     </a>
@@ -109,22 +111,35 @@
 
                 <!-- Developer 3 - Sandesh Bhandari -->
                 <div class="developer-card" id="sandeshCard">
-                    <div class="dev-avatar"><i class="fas fa-user"></i></div>
+                    <div class="dev-avatar">
+                        <img src="img/sandesh-bhandari.jpeg" alt="Sandesh Bhandari">
+                    </div>
                     <h5>Sandesh Bhandari</h5>
-                    <span class="dev-role">Developer</span>
                     <button class="btn btn-surprise btn-xs" id="surpriseBtn" aria-label="Contact Sandesh Bhandari">SURPRISE</button>
                 </div>
 
                 <!-- Developer 4 -->
                 <div class="developer-card">
-                    <div class="dev-avatar"><i class="fas fa-user"></i></div>
+                    <div class="dev-avatar">
+                        <img src="img/yubraj-bhandari.jpeg" alt="Yubraj Bhandari">
+                    </div>
                     <h5>Yubraj Bhandari</h5>
-                    <span class="dev-role">Developer</span>
                     <a href="https://www.facebook.com/yubraj.bhandari.39794" target="_blank" rel="noopener noreferrer" class="btn btn-facebook btn-xs" aria-label="Connect with Yubraj Bhandari on Facebook">
                         <i class="fab fa-facebook-f"></i> Connect
                     </a>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Stay Updated -->
+    <div class="footer-stay-updated">
+        <div class="container">
+            <form class="stay-updated-row" onsubmit="event.preventDefault();">
+                <span class="stay-text">Stay Updated</span>
+                <input type="email" placeholder="Enter your email" required class="stay-input">
+                <button type="submit" class="btn btn-primary btn-xs">Subscribe</button>
+            </form>
         </div>
     </div>
 

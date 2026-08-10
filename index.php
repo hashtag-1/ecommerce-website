@@ -12,11 +12,6 @@ $featured_products = getFeaturedProducts(8);
 <section class="hero">
     <div class="container">
         <h1>Welcome to Seed2Greens</h1>
-        <p>Your trusted online marketplace for fresh produce, quality seeds, organic fertilizers, and agricultural tools. Growing together with Nepali farmers.</p>
-        <div class="hero-buttons">
-            <a href="products.php" class="btn btn-primary">Shop Now</a>
-            <a href="category.php?id=1" class="btn btn-secondary">Explore Fresh Produce</a>
-        </div>
     </div>
 </section>
 
