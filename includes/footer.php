@@ -65,8 +65,7 @@
                 <h4>Meet the Developers</h4>
             </div>
             <div class="developers-grid">
-                <!-- Developer 1 -->
-                <div class="developer-card">
+                <div class="developer">
                     <div class="dev-avatar">
                         <img src="img/sanskar-sharma.jpeg" alt="Sanskar Sharma">
                     </div>
@@ -76,8 +75,7 @@
                     </a>
                 </div>
 
-                <!-- Developer 2 -->
-                <div class="developer-card">
+                <div class="developer">
                     <div class="dev-avatar">
                         <img src="img/yubesh-joshi.jpeg" alt="Yubesh Joshi">
                     </div>
@@ -87,8 +85,7 @@
                     </a>
                 </div>
 
-                <!-- Developer 3 - Sandesh Bhandari -->
-                <div class="developer-card" id="sandeshCard">
+                <div class="developer" id="sandeshCard">
                     <div class="dev-avatar">
                         <img src="img/sandesh-bhandari.jpeg" alt="Sandesh Bhandari">
                     </div>
@@ -96,8 +93,7 @@
                     <button class="btn btn-surprise btn-xs" id="surpriseBtn" aria-label="Contact Sandesh Bhandari">SURPRISE</button>
                 </div>
 
-                <!-- Developer 4 -->
-                <div class="developer-card">
+                <div class="developer">
                     <div class="dev-avatar">
                         <img src="img/yubraj-bhandari.jpeg" alt="Yubraj Bhandari">
                     </div>

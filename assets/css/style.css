@@ -1802,18 +1802,18 @@ input, select, textarea {
 
 /* === Developers Section === */
 .footer-developers {
-    padding: 24px 0 20px;
+    padding: 20px 0 16px;
     border-bottom: 1px solid rgba(20,83,45,0.08);
 }
 
 .developers-header {
     text-align: center;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
 }
 
 .developers-header h4 {
-    font-size: 14px;
-    margin-bottom: 2px;
+    font-size: 13px;
+    margin-bottom: 0;
 }
 
 .developers-subtitle {
@@ -1821,37 +1821,30 @@ input, select, textarea {
 }
 
 .developers-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
 }
 
-.developer-card {
-    background: #fff;
-    border: 1px solid rgba(20,83,45,0.1);
-    border-radius: var(--radius);
-    padding: 14px 10px;
+.developer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
-    transition: var(--transition);
-    position: relative;
-    overflow: hidden;
-}
-
-.developer-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    border-color: rgba(46,125,50,0.25);
+    flex: 1;
+    min-width: 0;
 }
 
 .dev-avatar {
-    width: 48px;
-    height: 48px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 8px;
+    margin: 0 auto 6px;
     background: var(--bg-green);
 }
 
@@ -1862,10 +1855,11 @@ input, select, textarea {
     border-radius: 50%;
 }
 
-.developer-card h5 {
-    font-size: 13px;
-    margin-bottom: 8px;
+.developer h5 {
+    font-size: 12px;
+    margin-bottom: 6px;
     font-weight: 600;
+    color: var(--footer-dark);
 }
 
 .dev-role {
@@ -1881,35 +1875,35 @@ input, select, textarea {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 5px;
-    width: 100%;
-    padding: 6px 10px;
+    gap: 4px;
+    padding: 4px 10px;
     border-radius: 999px;
     background: #1877F2;
     color: #fff;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     border: none;
     transition: var(--transition);
     cursor: pointer;
     text-decoration: none;
+    white-space: nowrap;
 }
 
 .btn-facebook:hover,
 .btn-facebook:focus {
     background: #166fe5;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(24,119,242,0.25);
+    box-shadow: 0 2px 6px rgba(24,119,242,0.25);
     outline: none;
 }
 
 .btn-facebook i {
-    font-size: 12px;
+    font-size: 11px;
 }
 
 .btn-xs {
-    padding: 5px 14px;
-    font-size: 11px;
+    padding: 4px 12px;
+    font-size: 10px;
     border-radius: 999px;
 }
 
@@ -1917,12 +1911,11 @@ input, select, textarea {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    padding: 6px 10px;
+    padding: 4px 12px;
     border-radius: 999px;
     background: var(--primary);
     color: #fff;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     border: none;
     transition: var(--transition);
@@ -1934,7 +1927,7 @@ input, select, textarea {
 .btn-surprise:focus {
     background: var(--primary-dark);
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(20,83,45,0.25);
+    box-shadow: 0 2px 6px rgba(20,83,45,0.25);
     outline: none;
 }
 
@@ -2225,66 +2218,47 @@ input, select, textarea {
     }
 
     .developers-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+        gap: 8px;
     }
 
-    .stay-updated-row {
-        gap: 10px;
+    .dev-avatar {
+        width: 48px;
+        height: 48px;
     }
 
-    .stay-input {
-        min-width: 140px;
-        max-width: 200px;
+    .developer h5 {
+        font-size: 11px;
+    }
+
+    .btn-facebook,
+    .btn-surprise {
+        font-size: 9px;
+        padding: 3px 8px;
     }
 }
 
 @media (max-width: 768px) {
-    .hero h1 {
-        font-size: 28px;
-    }
-
-    .footer-main {
-        padding: 24px 0 18px;
-    }
-
-    .footer-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-    }
-
     .footer-developers {
         padding: 18px 0 14px;
     }
 
     .developers-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-    }
-
-    .developer-card {
-        padding: 12px 8px;
+        gap: 8px;
     }
 
     .dev-avatar {
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
     }
 
-    .footer-bottom-inner {
-        flex-direction: column;
-        text-align: center;
-        gap: 2px;
+    .developer h5 {
+        font-size: 11px;
     }
 
-    .stay-updated-row {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    .stay-input {
-        min-width: 140px;
-        max-width: 100%;
+    .btn-facebook,
+    .btn-surprise {
+        font-size: 9px;
+        padding: 3px 8px;
     }
 }
 
@@ -2294,12 +2268,7 @@ input, select, textarea {
     }
 
     .developers-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-    }
-
-    .developer-card {
-        padding: 10px 6px;
+        gap: 6px;
     }
 
     .dev-avatar {
@@ -2307,14 +2276,14 @@ input, select, textarea {
         height: 36px;
     }
 
-    .developer-card h5 {
-        font-size: 12px;
+    .developer h5 {
+        font-size: 10px;
     }
 
     .btn-facebook,
     .btn-surprise {
-        font-size: 10px;
-        padding: 4px 10px;
+        font-size: 9px;
+        padding: 3px 8px;
     }
 
     .stay-text {
