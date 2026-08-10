@@ -130,16 +130,4 @@ $featured_products = getFeaturedProducts(8);
     </div>
 </section>
 
-<!-- Newsletter -->
-<section class="section" style="background: var(--primary); color: white; text-align: center;">
-    <div class="container">
-        <h2 style="font-size: 28px; margin-bottom: 10px;">Stay Updated</h2>
-        <p style="margin-bottom: 25px; opacity: 0.9;">Subscribe to our newsletter for latest offers and farming tips</p>
-        <form style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; max-width: 500px; margin: 0 auto;" onsubmit="event.preventDefault(); alert('Thank you for subscribing!');">
-            <input type="email" placeholder="Enter your email" style="flex: 1; min-width: 250px; padding: 12px 15px; border: none; border-radius: var(--radius);" required>
-            <button type="submit" class="btn" style="background: white; color: var(--primary);">Subscribe</button>
-        </form>
-    </div>
-</section>
-
 <?php include __DIR__ . '/includes/footer.php'; ?>

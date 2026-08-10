@@ -2,28 +2,6 @@
 
 <!-- Footer -->
 <footer class="site-footer">
-    <!-- Compact CTA Row -->
-    <div class="footer-cta-row">
-        <div class="container">
-            <div class="cta-grid">
-                <div class="cta-col">
-                    <h4>Stay Updated</h4>
-                    <p>Get the latest updates, products, and growing tips.</p>
-                    <form class="newsletter-form" onsubmit="event.preventDefault();">
-                        <div class="newsletter-input-wrap">
-                            <input type="email" placeholder="Enter your email" required>
-                            <button type="submit" class="btn btn-primary btn-sm">Subscribe</button>
-                        </div>
-                    </form>
-                </div>
-                <div class="cta-col cta-col-right">
-                    <h4>Grow Better. Live Greener.</h4>
-                    <p>Everything you need to grow with confidence.</p>
-                    <a href="products.php" class="btn btn-primary btn-sm">Explore Products</a>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Main Footer Content -->
     <div class="footer-main">
