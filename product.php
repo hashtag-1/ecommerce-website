@@ -37,7 +37,7 @@ if (isLoggedIn()) {
         
         <div class="product-detail">
             <div class="product-detail-image">
-                <i class="fas fa-box"></i>
+                <img src="img/<?php echo getProductImage($product); ?>" alt="<?php echo sanitize($product['name']); ?>">
             </div>
             
             <div class="product-detail-info">

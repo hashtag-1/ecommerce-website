@@ -54,7 +54,7 @@ $wishlist_items = getWishlistItems($user_id);
                 <?php foreach ($wishlist_items as $item): ?>
                     <div class="product-card">
                         <div class="product-card-image">
-                            <i class="fas fa-box"></i>
+                            <img src="img/<?php echo getProductImage($item); ?>" alt="<?php echo sanitize($item['name']); ?>">
                         </div>
                         <div class="product-card-body">
                             <div class="product-category"><?php echo sanitize($item['category_name'] ?? 'Product'); ?></div>

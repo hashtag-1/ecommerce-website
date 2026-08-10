@@ -57,7 +57,7 @@ $featured_products = getFeaturedProducts(8);
             <?php foreach ($featured_products as $product): ?>
                 <div class="product-card">
                     <div class="product-card-image">
-                        <i class="fas fa-box"></i>
+                        <img src="img/<?php echo getProductImage($product); ?>" alt="<?php echo sanitize($product['name']); ?>">
                     </div>
                     <div class="product-card-body">
                         <div class="product-category"><?php echo sanitize($product['category_name']); ?></div>

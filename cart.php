@@ -80,9 +80,9 @@ $grand_total = $cart_total + $delivery_fee;
                                 <tr>
                                     <td>
                                         <div class="cart-product">
-                                            <div class="cart-product-image">
-                                                <i class="fas fa-box"></i>
-                                            </div>
+                                        <div class="cart-product-image">
+                                            <img src="img/<?php echo getProductImage($item); ?>" alt="<?php echo sanitize($item['name']); ?>">
+                                        </div>
                                             <div>
                                                 <strong><?php echo sanitize($item['name']); ?></strong>
                                                 <br><small style="color: var(--text-light);"><?php echo sanitize($item['unit']); ?></small>

@@ -234,6 +234,38 @@ function getOrderCountByStatus($status) {
     return $result['count'] ?? 0;
 }
 
+function getProductImage($product) {
+    $name = $product['name'] ?? $product['product_name'] ?? '';
+    $map = [
+        'Fresh Tomato' => 'fresh-tomato.jpg',
+        'Potato' => 'potato.jpg',
+        'Red Apple' => 'red-apple.jpg',
+        'Fresh Cauliflower' => 'fresh-cauliflower.jpg',
+        'Spinach (Palak)' => 'spinach.jpg',
+        'Carrot' => 'carrot.jpg',
+        'Cabbage' => 'cabbage.jpg',
+        'Tomato Seeds' => 'tomato seed.webp',
+        'Radish Seeds' => 'radish-seed.jpg',
+        'Cucumber Seeds' => 'cucumber-seed.jpg',
+        'Spinach Seeds' => 'spinach-seed.jpg',
+        'Chili Seeds' => 'chilli-seed.jpg',
+        'Brinjal Seeds' => 'brinjal-seed.jpg',
+        'Vermicompost' => 'vermicompost.jpg',
+        'Organic Compost' => 'organic-compost.jpg',
+        'Cow Manure Fertilizer' => 'cow-manure.webp',
+        'Neem Cake Fertilizer' => 'neem-cake-fertilizer.jpg',
+        'Bone Meal Fertilizer' => 'bone-meal-fertilizer.jpg',
+        'Hand Trowel' => 'hand-trowel.jpg',
+        'Garden Hoe' => 'garden-hoe.jpg',
+        'Pruning Shears' => 'pruning-shear.jpg',
+        'Watering Can' => 'watering-can.jpg',
+        'Garden Fork' => 'garden-fork.jpg',
+        'Gardening Gloves' => 'gardening-gloves.jpg',
+    ];
+
+    return $map[$name] ?? ($product['image'] ?? $product['product_image'] ?? '');
+}
+
 // ============================================
 // Admin Helper Functions
 // ============================================

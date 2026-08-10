@@ -112,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
                         <?php foreach ($cart_items as $item): ?>
                             <div class="checkout-item">
                                 <div class="checkout-item-image">
-                                    <i class="fas fa-box"></i>
+                                    <img src="img/<?php echo getProductImage($item); ?>" alt="<?php echo sanitize($item['name']); ?>">
                                 </div>
                                 <div class="checkout-item-info" style="flex: 1;">
                                     <h4><?php echo sanitize($item['name']); ?></h4>

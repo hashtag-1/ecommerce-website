@@ -42,7 +42,7 @@ $order_items = getOrderItems($order_id);
                     <?php foreach ($order_items as $item): ?>
                         <div class="checkout-item">
                             <div class="checkout-item-image">
-                                <i class="fas fa-box"></i>
+                                <img src="img/<?php echo getProductImage($item); ?>" alt="<?php echo sanitize($item['product_name']); ?>">
                             </div>
                             <div class="checkout-item-info" style="flex: 1;">
                                 <h4><?php echo sanitize($item['product_name']); ?></h4>
