@@ -1,23 +1,24 @@
 <?php
 
-// Vercel PHP entry point for the existing Seed 2 Greens application.
+// Vercel PHP entry point for Seed 2 Greens.
 
-// Project root
 $root = dirname(__DIR__);
 
-// Get the requested PHP file from the Vercel route.
 $requested = $_GET['file'] ?? 'index.php';
-
-// Remove a leading slash if present.
 $requested = ltrim($requested, '/');
 
-// Security: only allow PHP files inside the existing project,
-// and prevent direct access to configuration/internal files.
+// Only allow PHP files.
+if (!str_ends_with(strtolower($requested), '.php')) {
+    http_response_code(404);
+    exit('Not Found');
+}
+
+// Prevent access to internal files.
 $blocked = [
     'config/',
     'includes/',
     'database/',
-    'api/'
+    'api/',
 ];
 
 foreach ($blocked as $folder) {
@@ -27,24 +28,20 @@ foreach ($blocked as $folder) {
     }
 }
 
-// Only PHP files are allowed through this router.
-if (!str_ends_with(strtolower($requested), '.php')) {
-    http_response_code(404);
-    exit('Not Found');
-}
-
+$rootReal = realpath($root);
 $target = realpath($root . DIRECTORY_SEPARATOR . $requested);
 
-// Make sure the target actually exists and is inside the project.
+// Make sure the requested file exists and stays inside the project.
 if (
     $target === false ||
-    strpos($target, realpath($root)) !== 0 ||
+    $rootReal === false ||
+    strpos($target, $rootReal . DIRECTORY_SEPARATOR) !== 0 ||
     !is_file($target)
 ) {
     http_response_code(404);
     exit('Page Not Found');
 }
 
-// Run the existing PHP page from the project root.
 chdir($root);
+
 require $target;
