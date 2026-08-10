@@ -14,6 +14,26 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <!-- Weather & Time Bar -->
+    <div class="weather-bar" id="weatherBar" aria-label="Current weather and time in Kathmandu, Nepal" role="status" aria-live="polite">
+        <div class="container">
+            <div class="weather-content">
+                <span class="weather-location"><i class="fas fa-leaf"></i> Kathmandu</span>
+                <span class="weather-divider" aria-hidden="true">|</span>
+                <span class="weather-condition" id="weatherCondition">
+                    <i class="fas fa-spinner fa-spin" id="weatherIcon"></i>
+                    <span class="weather-condition-text desktop-only" id="weatherConditionText">Loading...</span>
+                </span>
+                <span class="weather-temp" id="weatherTemp">--°C</span>
+                <span class="weather-divider desktop-only" aria-hidden="true">|</span>
+                <span class="weather-humidity"><i class="fas fa-droplet"></i> <span id="weatherHumidity">--%</span></span>
+                <span class="weather-wind desktop-only"><i class="fas fa-wind"></i> <span id="weatherWind">-- km/h</span></span>
+                <span class="weather-divider" aria-hidden="true">|</span>
+                <span class="weather-time"><i class="fas fa-clock"></i> <span id="kathmanduTime">--:--:-- --</span></span>
+            </div>
+        </div>
+    </div>
+
     <!-- Top Bar -->
     <div class="top-bar">
         <div class="container">

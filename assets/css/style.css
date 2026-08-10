@@ -105,13 +105,148 @@ input, select, textarea {
     text-decoration: underline;
 }
 
+/* === Weather & Time Bar === */
+.weather-bar {
+    background: linear-gradient(90deg, var(--footer-dark), var(--footer-secondary));
+    color: var(--footer-soft);
+    font-size: 12px;
+    padding: 8px 0;
+    position: sticky;
+    top: 0;
+    z-index: 1001;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(8px);
+}
+
+.weather-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.weather-location {
+    font-weight: 600;
+    color: var(--footer-white);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.weather-location i {
+    color: var(--footer-accent);
+    font-size: 13px;
+}
+
+.weather-divider {
+    color: rgba(255,255,255,0.25);
+    font-weight: 300;
+}
+
+.weather-condition {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.weather-condition-text.desktop-only {
+    display: inline;
+}
+
+.weather-temp {
+    font-weight: 700;
+    color: var(--footer-white);
+    font-size: 13px;
+}
+
+.weather-humidity,
+.weather-wind,
+.weather-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    opacity: 0.9;
+}
+
+.weather-humidity i,
+.weather-wind i,
+.weather-time i {
+    font-size: 11px;
+    color: var(--footer-accent);
+}
+
+.desktop-only {
+    display: inline;
+}
+
+@media (max-width: 768px) {
+    .weather-bar {
+        font-size: 11px;
+        padding: 7px 0;
+    }
+
+    .weather-content {
+        gap: 8px;
+    }
+
+    .desktop-only {
+        display: none;
+    }
+
+    .weather-condition-text.desktop-only {
+        display: none;
+    }
+
+    .weather-divider {
+        margin: 0 1px;
+    }
+}
+
+@media (max-width: 480px) {
+    .weather-bar {
+        font-size: 11px;
+        padding: 6px 0;
+    }
+
+    .weather-content {
+        gap: 8px;
+        justify-content: space-between;
+    }
+
+    .weather-location {
+        font-size: 11px;
+    }
+
+    .weather-temp {
+        font-size: 12px;
+    }
+
+    .weather-humidity,
+    .weather-time {
+        font-size: 11px;
+    }
+}
+
 /* === Navbar === */
 .navbar {
     background: var(--bg-white);
     box-shadow: var(--shadow);
     position: sticky;
-    top: 0;
+    top: 37px;
     z-index: 1000;
+}
+
+@media (max-width: 768px) {
+    .navbar {
+        top: 34px;
+    }
+}
+
+@media (max-width: 480px) {
+    .navbar {
+        top: 32px;
+    }
 }
 
 .navbar .container {

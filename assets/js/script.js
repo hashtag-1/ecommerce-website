@@ -286,6 +286,125 @@ document.addEventListener('DOMContentLoaded', function() {
     
 });
 
+// ============================================
+// Kathmandu Live Time + Weather
+// ============================================
+(function() {
+    const KATHMANDU_LAT = 27.7172;
+    const KATHMANDU_LON = 85.3240;
+    const WEATHER_CACHE_MS = 10 * 60 * 1000; // 10 minutes
+
+    let weatherCache = { data: null, ts: null };
+
+    function updateClock() {
+        const el = document.getElementById('kathmanduTime');
+        if (!el) return;
+        const now = new Date();
+        const isMobile = window.innerWidth <= 480;
+        const options = {
+            timeZone: 'Asia/Kathmandu',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        };
+        if (!isMobile) {
+            options.second = '2-digit';
+        }
+        const fmt = new Intl.DateTimeFormat('en-US', options);
+        el.textContent = fmt.format(now);
+    }
+
+    function weatherCodeToIcon(code) {
+        if (code === 0 || code === 1) return 'fa-sun';
+        if (code === 2) return 'fa-cloud-sun';
+        if (code === 3) return 'fa-cloud';
+        if (code === 45 || code === 48) return 'fa-smog';
+        if (code >= 51 && code <= 55) return 'fa-cloud-rain';
+        if (code >= 61 && code <= 65) return 'fa-cloud-rain';
+        if (code >= 71 && code <= 75) return 'fa-snowflake';
+        if (code >= 80 && code <= 82) return 'fa-cloud-rain';
+        if (code >= 95 && code <= 99) return 'fa-bolt';
+        return 'fa-cloud';
+    }
+
+    function weatherCodeToText(code) {
+        if (code === 0 || code === 1) return 'Clear';
+        if (code === 2) return 'Partly Cloudy';
+        if (code === 3) return 'Overcast';
+        if (code === 45 || code === 48) return 'Fog';
+        if (code >= 51 && code <= 55) return 'Drizzle';
+        if (code >= 61 && code <= 65) return 'Rain';
+        if (code >= 71 && code <= 75) return 'Snow';
+        if (code >= 80 && code <= 82) return 'Rain Showers';
+        if (code >= 95 && code <= 99) return 'Thunderstorm';
+        return 'Cloudy';
+    }
+
+    function updateWeatherUI(data, isStale) {
+        const conditionEl = document.getElementById('weatherCondition');
+        const iconEl = document.getElementById('weatherIcon');
+        const textEl = document.getElementById('weatherConditionText');
+        const tempEl = document.getElementById('weatherTemp');
+        const humidityEl = document.getElementById('weatherHumidity');
+        const windEl = document.getElementById('weatherWind');
+
+        if (!conditionEl || !tempEl) return;
+
+        const current = data.current || data;
+        const code = current.weather_code;
+        const icon = weatherCodeToIcon(code);
+        const text = weatherCodeToText(code);
+
+        if (iconEl) iconEl.className = 'fas ' + icon;
+        if (textEl) textEl.textContent = text + (isStale ? ' (cached)' : '');
+        tempEl.textContent = Math.round(current.temperature_2m) + '°C';
+
+        if (humidityEl) humidityEl.textContent = Math.round(current.relative_humidity_2m) + '%';
+        if (windEl) windEl.textContent = Math.round(current.wind_speed_10m) + ' km/h';
+    }
+
+    function showWeatherUnavailable() {
+        const iconEl = document.getElementById('weatherIcon');
+        const textEl = document.getElementById('weatherConditionText');
+        const tempEl = document.getElementById('weatherTemp');
+        if (iconEl) iconEl.className = 'fas fa-circle-exclamation';
+        if (textEl) textEl.textContent = 'Weather unavailable';
+        if (tempEl) tempEl.textContent = '';
+    }
+
+    async function fetchWeather() {
+        const now = Date.now();
+        if (weatherCache.data && weatherCache.ts && (now - weatherCache.ts < WEATHER_CACHE_MS)) {
+            updateWeatherUI(weatherCache.data, false);
+            return;
+        }
+
+        try {
+            const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + KATHMANDU_LAT + '&longitude=' + KATHMANDU_LON + '&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=Asia/Kathmandu';
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('API error: ' + response.status);
+            const data = await response.json();
+            weatherCache = { data: data, ts: now };
+            updateWeatherUI(data, false);
+        } catch (err) {
+            console.error('Weather fetch failed:', err);
+            if (weatherCache.data) {
+                updateWeatherUI(weatherCache.data, true);
+            } else {
+                showWeatherUnavailable();
+            }
+        }
+    }
+
+    // Start clock immediately
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Fetch weather
+    fetchWeather();
+    setInterval(fetchWeather, WEATHER_CACHE_MS);
+})();
+
 /* === Rose Animation for Sandesh Bhandari Contact Button === */
 (function() {
     const contactBtn = document.getElementById('contactRoseBtn');
