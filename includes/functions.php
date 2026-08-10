@@ -194,6 +194,18 @@ function isInWishlist($user_id, $product_id) {
     return $stmt->fetch() ? true : false;
 }
 
+function addToWishlist($user_id, $product_id) {
+    global $db;
+    $stmt = $db->prepare("INSERT INTO wishlist (user_id, product_id) VALUES (?, ?)");
+    return $stmt->execute([$user_id, $product_id]);
+}
+
+function removeFromWishlist($user_id, $product_id) {
+    global $db;
+    $stmt = $db->prepare("DELETE FROM wishlist WHERE user_id = ? AND product_id = ?");
+    return $stmt->execute([$user_id, $product_id]);
+}
+
 // ============================================
 // Order Helper Functions
 // ============================================
