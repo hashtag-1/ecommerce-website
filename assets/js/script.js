@@ -462,3 +462,221 @@ document.addEventListener('DOMContentLoaded', function() {
         triggerSurprise();
     });
 })();
+
+// ============================================
+// Seed2Greens - Background Music Feature
+// ============================================
+(function() {
+    const STORAGE_KEY = 'seed2greens_music_preference';
+    const AUDIO_SRC = 'img/song.mp3';
+    const VOLUME = 0.5;
+
+    const modalOverlay = document.getElementById('musicModalOverlay');
+    const yesBtn = document.getElementById('musicYesBtn');
+    const noBtn = document.getElementById('musicNoBtn');
+    const musicControl = document.getElementById('musicControl');
+    const musicControlIcon = document.getElementById('musicControlIcon');
+    const musicControlText = document.getElementById('musicControlText');
+
+    let audio = null;
+    let isPlaying = false;
+    let hasEnded = false;
+
+    function getPreference() {
+        try {
+            return sessionStorage.getItem(STORAGE_KEY);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function setPreference(value) {
+        try {
+            sessionStorage.setItem(STORAGE_KEY, value);
+        } catch (e) {
+            // sessionStorage unavailable
+        }
+    }
+
+    function closeModal() {
+        if (modalOverlay) {
+            modalOverlay.classList.remove('active');
+            modalOverlay.setAttribute('aria-hidden', 'true');
+        }
+    }
+
+    function showMusicControl() {
+        if (musicControl) {
+            musicControl.style.display = 'inline-flex';
+            updateMusicControlUI();
+        }
+    }
+
+    function hideMusicControl() {
+        if (musicControl) {
+            musicControl.style.display = 'none';
+        }
+    }
+
+    function updateMusicControlUI() {
+        if (!musicControlIcon || !musicControlText) return;
+        if (hasEnded) {
+            musicControlIcon.textContent = '🎵';
+            musicControlText.textContent = 'Finished';
+        } else if (isPlaying) {
+            musicControlIcon.textContent = '⏸';
+            musicControlText.textContent = 'Playing';
+        } else {
+            musicControlIcon.textContent = '▶';
+            musicControlText.textContent = 'Paused';
+        }
+    }
+
+    function createAudio() {
+        if (audio) {
+            audio.pause();
+            audio.removeAttribute('src');
+            audio.load();
+        }
+
+        audio = new Audio(AUDIO_SRC);
+        audio.volume = VOLUME;
+        audio.loop = false;
+        audio.preload = 'none';
+
+        audio.addEventListener('ended', function() {
+            isPlaying = false;
+            hasEnded = true;
+            updateMusicControlUI();
+        });
+
+        audio.addEventListener('error', function() {
+            console.warn('Seed2Greens: Unable to load music file.');
+            isPlaying = false;
+            hasEnded = true;
+            hideMusicControl();
+            closeModal();
+        });
+
+        return audio;
+    }
+
+    function playMusic() {
+        try {
+            if (!audio) {
+                createAudio();
+            }
+
+            if (hasEnded) {
+                audio.currentTime = 0;
+                hasEnded = false;
+            }
+
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.then(function() {
+                    isPlaying = true;
+                    showMusicControl();
+                    updateMusicControlUI();
+                }).catch(function(err) {
+                    console.warn('Seed2Greens: Playback failed.', err);
+                    isPlaying = false;
+                    hideMusicControl();
+                });
+            }
+        } catch (e) {
+            console.warn('Seed2Greens: Music error.', e);
+            hideMusicControl();
+        }
+    }
+
+    function pauseMusic() {
+        if (audio && isPlaying) {
+            audio.pause();
+            isPlaying = false;
+            updateMusicControlUI();
+        }
+    }
+
+    function resumeMusic() {
+        if (audio && !isPlaying && !hasEnded) {
+            const resumePromise = audio.play();
+            if (resumePromise !== undefined) {
+                resumePromise.then(function() {
+                    isPlaying = true;
+                    updateMusicControlUI();
+                }).catch(function(err) {
+                    console.warn('Seed2Greens: Resume failed.', err);
+                });
+            }
+        }
+    }
+
+    function handleMusicControlClick() {
+        if (!audio || hasEnded) {
+            if (hasEnded) {
+                hasEnded = false;
+                playMusic();
+            }
+            return;
+        }
+
+        if (isPlaying) {
+            pauseMusic();
+        } else {
+            resumeMusic();
+        }
+    }
+
+    function showPrompt() {
+        if (modalOverlay) {
+            modalOverlay.classList.add('active');
+            modalOverlay.setAttribute('aria-hidden', 'false');
+        }
+    }
+
+    function initMusicFeature() {
+        const preference = getPreference();
+
+        if (preference === 'yes') {
+            playMusic();
+            return;
+        }
+
+        if (preference === 'no') {
+            return;
+        }
+
+        // No preference stored yet; show prompt after a short delay
+        setTimeout(showPrompt, 600);
+    }
+
+    if (yesBtn) {
+        yesBtn.addEventListener('click', function() {
+            setPreference('yes');
+            closeModal();
+            playMusic();
+        });
+    }
+
+    if (noBtn) {
+        noBtn.addEventListener('click', function() {
+            setPreference('no');
+            closeModal();
+        });
+    }
+
+    if (musicControl) {
+        musicControl.addEventListener('click', function(e) {
+            e.preventDefault();
+            handleMusicControlClick();
+        });
+    }
+
+    // Initialize after DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initMusicFeature);
+    } else {
+        initMusicFeature();
+    }
+})();

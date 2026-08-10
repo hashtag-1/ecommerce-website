@@ -228,7 +228,150 @@ input, select, textarea {
     }
 }
 
-/* === Navbar === */
+/* === Music Prompt Modal === */
+.music-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    padding: 20px;
+}
+
+.music-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.music-modal {
+    background: #fff;
+    border-radius: var(--radius-lg);
+    padding: 28px 24px;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid rgba(20,83,45,0.08);
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.music-modal-overlay.active .music-modal {
+    transform: translateY(0);
+}
+
+.music-modal-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+    animation: musicBounce 2s ease-in-out infinite;
+}
+
+@keyframes musicBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+.music-modal h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: var(--footer-dark);
+}
+
+.music-modal p {
+    font-size: 14px;
+    color: #4B5563;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.music-modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.music-modal-actions .btn {
+    min-width: 140px;
+}
+
+/* === Floating Music Control === */
+.music-control {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9998;
+    background: #fff;
+    border: 1px solid rgba(20,83,45,0.15);
+    border-radius: 999px;
+    padding: 8px 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 13px;
+    color: var(--footer-dark);
+}
+
+.music-control:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-1px);
+}
+
+.music-control:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(46,125,50,0.15);
+}
+
+.music-control-icon {
+    font-size: 16px;
+}
+
+.music-control-text {
+    font-weight: 500;
+    font-size: 12px;
+}
+
+@media (max-width: 768px) {
+    .music-modal {
+        padding: 24px 18px;
+        max-width: 320px;
+    }
+
+    .music-modal h3 {
+        font-size: 16px;
+    }
+
+    .music-modal p {
+        font-size: 13px;
+    }
+
+    .music-control {
+        bottom: 16px;
+        right: 16px;
+        padding: 7px 14px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .music-modal-overlay,
+    .music-modal,
+    .music-control {
+        transition: none !important;
+    }
+
+    .music-modal-icon {
+        animation: none !important;
+    }
+}
 .navbar {
     background: var(--bg-white);
     box-shadow: var(--shadow);

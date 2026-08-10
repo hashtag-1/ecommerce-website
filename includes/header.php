@@ -34,6 +34,25 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </div>
     </div>
 
+    <!-- Music Prompt Modal -->
+    <div class="music-modal-overlay" id="musicModalOverlay" aria-hidden="true">
+        <div class="music-modal" role="dialog" aria-modal="true" aria-labelledby="musicModalTitle">
+            <div class="music-modal-icon" aria-hidden="true">🎵</div>
+            <h3 id="musicModalTitle">Do you love music?</h3>
+            <p>Would you like to enjoy some music while exploring Seed 2 Greens?</p>
+            <div class="music-modal-actions">
+                <button class="btn btn-primary btn-sm" id="musicYesBtn">YES, PLAY MUSIC</button>
+                <button class="btn btn-secondary btn-sm" id="musicNoBtn">NO, THANKS</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Music Control -->
+    <button class="music-control" id="musicControl" aria-label="Play music" style="display: none;">
+        <span class="music-control-icon" id="musicControlIcon">🎵</span>
+        <span class="music-control-text" id="musicControlText">Playing</span>
+    </button>
+
     <!-- Top Bar -->
     <div class="top-bar">
         <div class="container">
