@@ -4,7 +4,14 @@ $page_title = 'Shopping Cart - Seed2Greens';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/auth.php';
 
+$is_ajax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
+
 if (!isLoggedIn()) {
+    if ($is_ajax) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'Please login to add items to cart', 'redirect' => 'login.php']);
+        exit();
+    }
     setFlashMessage('Please login to view your cart', 'error');
     redirect('login.php');
 }
@@ -19,10 +26,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_to_cart'])) {
     $product = getProductById($product_id);
     if ($product && $product['stock_quantity'] >= $quantity) {
         addToCart($user_id, $product_id, $quantity);
-        setFlashMessage('Product added to cart!', 'success');
+        $message = 'Product added to cart!';
+        $success = true;
     } else {
-        setFlashMessage('Insufficient stock available', 'error');
+        $message = 'Insufficient stock available';
+        $success = false;
     }
+    
+    if ($is_ajax) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => $success,
+            'cart_count' => getCartCount($user_id),
+            'message' => $message
+        ]);
+        exit();
+    }
+    
+    setFlashMessage($message, $success ? 'success' : 'error');
     redirect('cart.php');
 }
 

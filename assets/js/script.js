@@ -198,20 +198,57 @@ document.addEventListener('DOMContentLoaded', function() {
     
     addToCartButtons.forEach(function(btn) {
         btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const form = this.closest('form');
+            if (!form) return;
+            
             const originalText = this.innerHTML;
             this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
             this.disabled = true;
             
-            setTimeout(function() {
-                btn.innerHTML = '<i class="fas fa-check"></i> Added!';
-                btn.style.background = '#28a745';
-                
-                setTimeout(function() {
+            const formData = new FormData(form);
+            formData.append('add_to_cart', '1');
+            
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const cartBadge = document.querySelector('.nav-icon[href="cart.php"] .badge');
+                    if (cartBadge) {
+                        cartBadge.textContent = data.cart_count;
+                    }
+                    
+                    btn.innerHTML = '<i class="fas fa-check"></i> Added!';
+                    btn.style.background = '#28a745';
+                    
+                    setTimeout(function() {
+                        btn.innerHTML = originalText;
+                        btn.style.background = '';
+                        btn.disabled = false;
+                    }, 1500);
+                } else {
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                        return;
+                    }
                     btn.innerHTML = originalText;
                     btn.style.background = '';
                     btn.disabled = false;
-                }, 1500);
-            }, 500);
+                    alert(data.message || 'Failed to add to cart');
+                }
+            })
+            .catch(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = '';
+                btn.disabled = false;
+            });
         });
     });
     
