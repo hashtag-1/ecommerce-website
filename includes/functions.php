@@ -266,6 +266,17 @@ function getProductImage($product) {
     return $map[$name] ?? ($product['image'] ?? $product['product_image'] ?? '');
 }
 
+function getCategoryImage($category) {
+    $map = [
+        'Fresh Produce' => 'Fresh-produce.jpeg',
+        'Seeds' => 'seeds.jpeg',
+        'Organic Fertilizers' => 'Organic-fertilizers.jpeg',
+        'Agriculture Tools' => 'Agriculture-tools.jpeg',
+    ];
+
+    return $map[$category['name']] ?? '';
+}
+
 // ============================================
 // Admin Helper Functions
 // ============================================

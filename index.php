@@ -30,7 +30,7 @@ $featured_products = getFeaturedProducts(8);
             <?php foreach ($categories as $category): ?>
                 <a href="category.php?id=<?php echo $category['id']; ?>" class="category-card">
                     <div class="category-card-image">
-                        <i class="fas fa-seedling"></i>
+                        <img src="img/<?php echo getCategoryImage($category); ?>" alt="<?php echo sanitize($category['name']); ?>">
                     </div>
                     <div class="category-card-body">
                         <h3><?php echo sanitize($category['name']); ?></h3>
