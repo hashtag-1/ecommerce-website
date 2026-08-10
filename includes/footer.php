@@ -2,14 +2,25 @@
 
 <!-- Footer -->
 <footer class="site-footer">
-    <!-- CTA Section -->
-    <div class="footer-cta">
+    <!-- Compact CTA Row -->
+    <div class="footer-cta-row">
         <div class="container">
-            <h2>Grow Better. Live Greener.</h2>
-            <p>Quality seeds, fresh produce, organic fertilizers, and reliable agricultural tools — everything you need to grow with confidence.</p>
-            <div class="footer-cta-buttons">
-                <a href="products.php" class="btn btn-primary btn-lg">Explore Products</a>
-                <a href="contact.php" class="btn btn-outline btn-lg">Contact Us</a>
+            <div class="cta-grid">
+                <div class="cta-col">
+                    <h4>Stay Updated</h4>
+                    <p>Get the latest updates, products, and growing tips.</p>
+                    <form class="newsletter-form" onsubmit="event.preventDefault();">
+                        <div class="newsletter-input-wrap">
+                            <input type="email" placeholder="Enter your email" required>
+                            <button type="submit" class="btn btn-primary btn-sm">Subscribe</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="cta-col cta-col-right">
+                    <h4>Grow Better. Live Greener.</h4>
+                    <p>Everything you need to grow with confidence.</p>
+                    <a href="products.php" class="btn btn-primary btn-sm">Explore Products</a>
+                </div>
             </div>
         </div>
     </div>
@@ -25,7 +36,6 @@
                         Seed<span>2</span>Greens
                     </div>
                     <p class="footer-tagline">Growing a greener future, one seed at a time.</p>
-                    <p class="footer-desc">Seed 2 Greens is an agricultural e-commerce platform connecting farmers, gardeners, and growers with quality products for healthier and more productive cultivation.</p>
                     <div class="social-links">
                         <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
                         <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
@@ -60,7 +70,6 @@
                 <!-- Contact -->
                 <div class="footer-col">
                     <h4>Get in Touch</h4>
-                    <p class="footer-contact-intro">Have a question about our products or need help choosing the right solution for your farm or garden? We're here to help.</p>
                     <ul class="contact-info">
                         <li><i class="fas fa-map-marker-alt"></i> Nepal</li>
                         <li><a href="tel:+977-01-1234567"><i class="fas fa-phone-alt"></i> +977-01-1234567</a></li>
@@ -75,57 +84,45 @@
     <div class="footer-developers">
         <div class="container">
             <div class="developers-header">
-                <h3>Meet the Developers</h3>
-                <p class="developers-subtitle">Built with passion, creativity, and technology.</p>
+                <h4>Meet the Developers</h4>
             </div>
             <div class="developers-grid">
                 <!-- Developer 1 -->
                 <div class="developer-card">
-                    <div class="dev-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <h4>Sanskar Sharma</h4>
+                    <div class="dev-avatar"><i class="fas fa-user"></i></div>
+                    <h5>Sanskar Sharma</h5>
                     <span class="dev-role">Developer</span>
-                    <a href="tel:+9779866138200" class="dev-phone">+977 986-6138200</a>
-                    <a href="https://www.facebook.com/sanskar.sharma.639786" target="_blank" rel="noopener noreferrer" class="btn btn-facebook" aria-label="Connect with Sanskar Sharma on Facebook">
-                        <i class="fab fa-facebook-f"></i> Connect on Facebook
+                    <a href="https://www.facebook.com/sanskar.sharma.639786" target="_blank" rel="noopener noreferrer" class="btn btn-facebook btn-xs" aria-label="Connect with Sanskar Sharma on Facebook">
+                        <i class="fab fa-facebook-f"></i> Connect
                     </a>
                 </div>
 
                 <!-- Developer 2 -->
                 <div class="developer-card">
-                    <div class="dev-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <h4>Yubesh Joshi</h4>
+                    <div class="dev-avatar"><i class="fas fa-user"></i></div>
+                    <h5>Yubesh Joshi</h5>
                     <span class="dev-role">Developer</span>
-                    <a href="tel:+9779763838490" class="dev-phone">+977 976-3838490</a>
-                    <a href="https://www.facebook.com/yubesh.joshi" target="_blank" rel="noopener noreferrer" class="btn btn-facebook" aria-label="Connect with Yubesh Joshi on Facebook">
-                        <i class="fab fa-facebook-f"></i> Connect on Facebook
+                    <a href="https://www.facebook.com/yubesh.joshi" target="_blank" rel="noopener noreferrer" class="btn btn-facebook btn-xs" aria-label="Connect with Yubesh Joshi on Facebook">
+                        <i class="fab fa-facebook-f"></i> Connect
                     </a>
                 </div>
 
                 <!-- Developer 3 - Sandesh Bhandari -->
-                <div class="developer-card">
-                    <div class="dev-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <h4>Sandesh Bhandari</h4>
+                <div class="developer-card" id="sandeshCard">
+                    <div class="dev-avatar"><i class="fas fa-user"></i></div>
+                    <h5>Sandesh Bhandari</h5>
                     <span class="dev-role">Developer</span>
-                    <button class="btn btn-contact-rose" id="contactRoseBtn" aria-label="Contact Sandesh Bhandari">Contact Me</button>
-                    <div class="rose-animation-container" id="roseContainer"></div>
+                    <button class="btn btn-surprise btn-xs" id="surpriseBtn" aria-label="Contact Sandesh Bhandari">SURPRISE</button>
+                    <div class="surprise-light" aria-hidden="true"></div>
                 </div>
 
                 <!-- Developer 4 -->
                 <div class="developer-card">
-                    <div class="dev-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <h4>Yubraj Bhandari</h4>
+                    <div class="dev-avatar"><i class="fas fa-user"></i></div>
+                    <h5>Yubraj Bhandari</h5>
                     <span class="dev-role">Developer</span>
-                    <a href="tel:9761806619" class="dev-phone">976-1806619</a>
-                    <a href="https://www.facebook.com/yubraj.bhandari.39794" target="_blank" rel="noopener noreferrer" class="btn btn-facebook" aria-label="Connect with Yubraj Bhandari on Facebook">
-                        <i class="fab fa-facebook-f"></i> Connect on Facebook
+                    <a href="https://www.facebook.com/yubraj.bhandari.39794" target="_blank" rel="noopener noreferrer" class="btn btn-facebook btn-xs" aria-label="Connect with Yubraj Bhandari on Facebook">
+                        <i class="fab fa-facebook-f"></i> Connect
                     </a>
                 </div>
             </div>

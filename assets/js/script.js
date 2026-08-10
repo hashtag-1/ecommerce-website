@@ -405,67 +405,39 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(fetchWeather, WEATHER_CACHE_MS);
 })();
 
-/* === Rose Animation for Sandesh Bhandari Contact Button === */
+/* === SURPRISE Marquee Light for Sandesh Bhandari === */
 (function() {
-    const contactBtn = document.getElementById('contactRoseBtn');
-    const roseContainer = document.getElementById('roseContainer');
+    const surpriseBtn = document.getElementById('surpriseBtn');
+    const sandeshCard = document.getElementById('sandeshCard');
     
-    if (!contactBtn || !roseContainer) return;
+    if (!surpriseBtn || !sandeshCard) return;
     
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     
-    function createRose() {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'rose-wrapper' + (prefersReducedMotion ? ' instant' : '');
+    function triggerSurprise() {
+        if (sandeshCard.classList.contains('surprise-active')) return;
         
-        wrapper.innerHTML = `
-            <div class="rose-glow"></div>
-            <div class="rose-bloom">
-                <div class="rose-petal inner-1"></div>
-                <div class="rose-petal inner-2"></div>
-                <div class="rose-petal inner-3"></div>
-                <div class="rose-petal outer-1"></div>
-                <div class="rose-petal outer-2"></div>
-                <div class="rose-petal outer-3"></div>
-                <div class="rose-petal outer-4"></div>
-                <div class="rose-petal outer-5"></div>
-                <div class="rose-petal center"></div>
-            </div>
-            <div class="rose-stem"></div>
-            <div class="rose-leaf left"></div>
-            <div class="rose-leaf right"></div>
-        `;
-        
-        roseContainer.appendChild(wrapper);
+        sandeshCard.classList.add('surprise-active');
         
         if (prefersReducedMotion) {
-            wrapper.style.opacity = '1';
-            wrapper.querySelectorAll('.rose-petal, .rose-stem, .rose-leaf, .rose-bloom, .rose-glow').forEach(function(el) {
-                el.style.opacity = '1';
-                if (el.classList.contains('rose-petal')) {
-                    var rotation = getComputedStyle(el).getPropertyValue('--petal-rotation').trim();
-                    el.style.transform = 'scale(1) rotate(' + (rotation || '0deg') + ')';
-                } else {
-                    el.style.transform = 'scale(1)';
-                }
-            });
+            const light = sandeshCard.querySelector('.surprise-light');
+            if (light) {
+                light.style.opacity = '1';
+                light.style.left = '50%';
+                light.style.transform = 'translateX(-50%)';
+            }
+            setTimeout(function() {
+                sandeshCard.classList.remove('surprise-active');
+            }, 1500);
         } else {
-            requestAnimationFrame(function() {
-                wrapper.classList.add('blooming');
-            });
+            setTimeout(function() {
+                sandeshCard.classList.remove('surprise-active');
+            }, 2600);
         }
-        
-        return wrapper;
     }
     
-    contactBtn.addEventListener('click', function(e) {
+    surpriseBtn.addEventListener('click', function(e) {
         e.preventDefault();
-        
-        const existing = roseContainer.querySelector('.rose-wrapper');
-        if (existing) {
-            existing.remove();
-        }
-        
-        createRose();
+        triggerSurprise();
     });
 })();
