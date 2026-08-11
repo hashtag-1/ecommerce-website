@@ -1049,8 +1049,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         track.appendChild(fragment);
 
-        // Duplicate for seamless loop
-        const clone = fragment.cloneNode(true);
+        const clone = document.createDocumentFragment();
+        reviews.forEach(function(review) {
+            clone.appendChild(createReviewCard(review));
+        });
         track.appendChild(clone);
     }
 

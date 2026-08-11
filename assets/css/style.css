@@ -2533,10 +2533,13 @@ input, select, textarea {
 }
 
 .reviews-track {
-    display: flex;
+    display: inline-flex;
     gap: 20px;
     width: max-content;
     animation: reviews-scroll 45s linear infinite;
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }
 
 .reviews-carousel:hover .reviews-track {
@@ -2544,8 +2547,8 @@ input, select, textarea {
 }
 
 @keyframes reviews-scroll {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-50%, 0, 0); }
 }
 
 .review-card {
@@ -2798,6 +2801,7 @@ input, select, textarea {
     
     .reviews-track {
         gap: 15px;
+        animation-duration: 35s;
     }
 }
 
@@ -2841,6 +2845,7 @@ input, select, textarea {
     
     .reviews-track {
         gap: 12px;
+        animation-duration: 30s;
     }
     
     .reviews-cta {
