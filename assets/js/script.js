@@ -467,7 +467,8 @@ document.addEventListener('DOMContentLoaded', function() {
 // Seed2Greens - Background Music Feature
 // ============================================
 (function() {
-    const STORAGE_KEY = 'seed2greens_music_preference';
+    const PREFERENCE_KEY = 'seed2greens_music_preference';
+    const STATE_KEY = 'seed2greens_music_state';
     const AUDIO_SRC = 'img/song.mp3';
     const VOLUME = 0.5;
 
@@ -481,10 +482,11 @@ document.addEventListener('DOMContentLoaded', function() {
     let audio = null;
     let isPlaying = false;
     let hasEnded = false;
+    let currentTime = 0;
 
     function getPreference() {
         try {
-            return sessionStorage.getItem(STORAGE_KEY);
+            return sessionStorage.getItem(PREFERENCE_KEY);
         } catch (e) {
             return null;
         }
@@ -492,7 +494,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function setPreference(value) {
         try {
-            sessionStorage.setItem(STORAGE_KEY, value);
+            sessionStorage.setItem(PREFERENCE_KEY, value);
+        } catch (e) {
+            // sessionStorage unavailable
+        }
+    }
+
+    function getSavedState() {
+        try {
+            const raw = sessionStorage.getItem(STATE_KEY);
+            if (!raw) return null;
+            return JSON.parse(raw);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function saveState() {
+        try {
+            const state = {
+                currentTime: audio ? audio.currentTime : currentTime,
+                isPlaying: isPlaying,
+                hasEnded: hasEnded,
+                timestamp: Date.now()
+            };
+            sessionStorage.setItem(STATE_KEY, JSON.stringify(state));
+        } catch (e) {
+            // sessionStorage unavailable
+        }
+    }
+
+    function clearState() {
+        try {
+            sessionStorage.removeItem(STATE_KEY);
         } catch (e) {
             // sessionStorage unavailable
         }
@@ -532,7 +566,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function createAudio() {
+    function createAudio(resumeFromTime) {
         if (audio) {
             audio.pause();
             audio.removeAttribute('src');
@@ -544,9 +578,15 @@ document.addEventListener('DOMContentLoaded', function() {
         audio.loop = false;
         audio.preload = 'none';
 
+        if (typeof resumeFromTime === 'number' && resumeFromTime > 0) {
+            audio.currentTime = resumeFromTime;
+        }
+
         audio.addEventListener('ended', function() {
             isPlaying = false;
             hasEnded = true;
+            currentTime = 0;
+            clearState();
             updateMusicControlUI();
         });
 
@@ -556,15 +596,18 @@ document.addEventListener('DOMContentLoaded', function() {
             hasEnded = true;
             hideMusicControl();
             closeModal();
+            clearState();
         });
 
         return audio;
     }
 
-    function playMusic() {
+    function playMusic(resumeFromTime) {
         try {
             if (!audio) {
-                createAudio();
+                createAudio(resumeFromTime);
+            } else if (typeof resumeFromTime === 'number' && resumeFromTime > 0) {
+                audio.currentTime = resumeFromTime;
             }
 
             if (hasEnded) {
@@ -593,8 +636,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function pauseMusic() {
         if (audio && isPlaying) {
             audio.pause();
+            currentTime = audio.currentTime;
             isPlaying = false;
             updateMusicControlUI();
+            saveState();
         }
     }
 
@@ -635,11 +680,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function restoreMusicState() {
+        const preference = getPreference();
+        if (preference !== 'yes') return;
+
+        const saved = getSavedState();
+        if (!saved) return;
+
+        if (saved.hasEnded) {
+            hasEnded = true;
+            currentTime = 0;
+            hideMusicControl();
+            clearState();
+            return;
+        }
+
+        const resumeFrom = typeof saved.currentTime === 'number' ? saved.currentTime : 0;
+        hasEnded = false;
+        isPlaying = false;
+        currentTime = resumeFrom;
+
+        playMusic(resumeFrom);
+    }
+
     function initMusicFeature() {
         const preference = getPreference();
 
         if (preference === 'yes') {
-            playMusic();
+            restoreMusicState();
             return;
         }
 
@@ -647,7 +715,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // No preference stored yet; show prompt after a short delay
         setTimeout(showPrompt, 600);
     }
 
@@ -655,7 +722,10 @@ document.addEventListener('DOMContentLoaded', function() {
         yesBtn.addEventListener('click', function() {
             setPreference('yes');
             closeModal();
-            playMusic();
+            currentTime = 0;
+            hasEnded = false;
+            clearState();
+            playMusic(0);
         });
     }
 
@@ -663,6 +733,10 @@ document.addEventListener('DOMContentLoaded', function() {
         noBtn.addEventListener('click', function() {
             setPreference('no');
             closeModal();
+            hasEnded = false;
+            isPlaying = false;
+            currentTime = 0;
+            clearState();
         });
     }
 
@@ -672,6 +746,15 @@ document.addEventListener('DOMContentLoaded', function() {
             handleMusicControlClick();
         });
     }
+
+    window.addEventListener('beforeunload', function() {
+        if (audio && isPlaying) {
+            currentTime = audio.currentTime;
+            saveState();
+        } else if (!isPlaying && !hasEnded && currentTime > 0) {
+            saveState();
+        }
+    });
 
     // Initialize after DOM is ready
     if (document.readyState === 'loading') {
