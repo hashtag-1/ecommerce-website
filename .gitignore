@@ -1,0 +1,25 @@
+# Environment variables
+.env
+
+# Temporary test files
+test_*.php
+fix_*.php
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Composer
+vendor/
+composer.lock
+
+# Node
+node_modules/
+package-lock.json
+yarn.lock
