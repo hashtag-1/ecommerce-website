@@ -80,6 +80,61 @@ $featured_products = getFeaturedProducts(8);
     </div>
 </section>
 
+<!-- Customer Reviews Section -->
+<section class="section reviews-section">
+    <div class="container">
+        <div class="reviews-header">
+            <span class="reviews-label">WHAT OUR CUSTOMERS SAY</span>
+            <h2 class="reviews-title">Real Experiences. Real Growth.</h2>
+            <p class="reviews-subtitle">Hear from people growing with Seed 2 Greens.</p>
+        </div>
+        
+        <div class="reviews-carousel" id="reviewsCarousel">
+            <div class="reviews-track" id="reviewsTrack">
+                <!-- Reviews injected by JavaScript -->
+            </div>
+        </div>
+        
+        <div class="reviews-footer">
+            <button class="btn btn-primary reviews-cta" id="openReviewModal">Share Your Experience</button>
+        </div>
+    </div>
+</section>
+
+<!-- Review Modal -->
+<div class="review-modal-overlay" id="reviewModalOverlay" aria-hidden="true">
+    <div class="review-modal" role="dialog" aria-modal="true" aria-labelledby="reviewModalTitle">
+        <div class="review-modal-header">
+            <h3 id="reviewModalTitle">Share Your Experience</h3>
+            <button class="review-modal-close" id="reviewModalClose" aria-label="Close review modal">&times;</button>
+        </div>
+        <form id="reviewForm" novalidate>
+            <div class="review-form-group">
+                <label for="reviewName">Your Name</label>
+                <input type="text" id="reviewName" placeholder="Enter your name" required>
+                <span class="review-error" id="reviewNameError">Please enter your name.</span>
+            </div>
+            <div class="review-form-group">
+                <label>Your Rating</label>
+                <div class="review-stars-input" id="reviewStarsInput" aria-label="Star rating">
+                    <button type="button" class="review-star" data-value="1" aria-label="1 star">☆</button>
+                    <button type="button" class="review-star" data-value="2" aria-label="2 stars">☆</button>
+                    <button type="button" class="review-star" data-value="3" aria-label="3 stars">☆</button>
+                    <button type="button" class="review-star" data-value="4" aria-label="4 stars">☆</button>
+                    <button type="button" class="review-star" data-value="5" aria-label="5 stars">☆</button>
+                </div>
+                <span class="review-error" id="reviewRatingError">Please select a rating.</span>
+            </div>
+            <div class="review-form-group">
+                <label for="reviewText">Your Review</label>
+                <textarea id="reviewText" placeholder="Tell us about your experience..." rows="4" required></textarea>
+                <span class="review-error" id="reviewTextError">Please write your review.</span>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Review</button>
+        </form>
+    </div>
+</div>
+
 <!-- Why Choose Us -->
 <section class="section">
     <div class="container">

@@ -949,3 +949,237 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 })();
+
+// ============================================
+// Seed2Greens - Customer Reviews
+// ============================================
+(function() {
+    const STORAGE_KEY = 'seed2greens_reviews';
+    const track = document.getElementById('reviewsTrack');
+    const modalOverlay = document.getElementById('reviewModalOverlay');
+    const openModalBtn = document.getElementById('openReviewModal');
+    const closeModalBtn = document.getElementById('reviewModalClose');
+    const reviewForm = document.getElementById('reviewForm');
+    const reviewName = document.getElementById('reviewName');
+    const reviewText = document.getElementById('reviewText');
+    const starsInput = document.getElementById('reviewStarsInput');
+    const starButtons = starsInput ? starsInput.querySelectorAll('.review-star') : [];
+
+    let selectedRating = 0;
+
+    const seedReviews = [
+        { name: 'Samir Bhandari', rating: 5, review: 'I ordered a few vegetable seeds for my home garden and was really impressed with the quality. The seeds arrived well packed and the growing results have been great.' },
+        { name: 'Sambhab Karna', rating: 5, review: 'Fresh produce at my doorstep in Kathmandu — what more could I ask for? The tomatoes and spinach were honestly the best I have had in a while.' },
+        { name: 'Shital Adhikari', rating: 4, review: 'Good variety of organic fertilizers and tools. Ordering was simple and delivery was on time. Would love to see more seed options in the future.' },
+        { name: 'Sabita Maharjan', rating: 5, review: 'The vermicompost I bought transformed my balcony garden. My plants are healthier and producing more than ever. Highly recommended for home gardeners.' },
+        { name: 'Amit Rai', rating: 5, review: 'Seed quality is consistently good. I have ordered multiple times and every packet has had high germination rates. Packaging is also neat and secure.' },
+        { name: 'Sumila Shakya', rating: 4, review: 'I appreciate the focus on organic products. The fertilizers work well and customer support was helpful when I had questions about application.' },
+        { name: 'Karan Timalsina', rating: 5, review: 'The gardening gloves and hand trowel I ordered are sturdy and comfortable. Great build quality for the price. Will definitely order more tools from here.' },
+        { name: 'Sadish Thapa', rating: 5, review: 'Fast delivery and genuine organic products. The fresh cauliflower and carrots were crisp and lasted much longer than supermarket produce.' },
+        { name: 'Shovit Shrestha', rating: 4, review: 'Simple ordering process and good product range. The cucumber seeds gave a nice yield. Minor suggestion: add more seasonal items during festivals.' },
+        { name: 'Shobhindra Budhathoki', rating: 5, review: 'As a commercial grower, I need reliable supplies. Seed 2 Greens has become my go-to for bulk seeds and fertilizers. Consistent quality every time.' }
+    ];
+
+    function getReviews() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                const data = JSON.parse(raw);
+                if (Array.isArray(data) && data.length > 0) {
+                    return data;
+                }
+            }
+        } catch (e) {
+            // ignore
+        }
+        return seedReviews.slice();
+    }
+
+    function saveReviews(reviews) {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(reviews));
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    function getInitials(name) {
+        const parts = name.trim().split(/\s+/);
+        if (parts.length >= 2) {
+            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        }
+        return name.substring(0, 2).toUpperCase();
+    }
+
+    function renderStars(rating) {
+        let html = '';
+        for (let i = 1; i <= 5; i++) {
+            html += i <= rating ? '★' : '☆';
+        }
+        return html;
+    }
+
+    function createReviewCard(review) {
+        const card = document.createElement('div');
+        card.className = 'review-card';
+        card.innerHTML = '' +
+            '<div class="review-card-stars" aria-label="' + review.rating + ' out of 5 stars">' + renderStars(review.rating) + '</div>' +
+            '<div class="review-card-text">' + escapeHtml(review.review) + '</div>' +
+            '<div class="review-card-divider"></div>' +
+            '<div class="review-card-author">' +
+                '<div class="review-avatar" aria-hidden="true">' + getInitials(review.name) + '</div>' +
+                '<div class="review-author-name">' + escapeHtml(review.name) + '</div>' +
+            '</div>';
+        return card;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function renderCarousel() {
+        if (!track) return;
+        track.innerHTML = '';
+        const reviews = getReviews();
+        const fragment = document.createDocumentFragment();
+        reviews.forEach(function(review) {
+            fragment.appendChild(createReviewCard(review));
+        });
+        track.appendChild(fragment);
+
+        // Duplicate for seamless loop
+        const clone = fragment.cloneNode(true);
+        track.appendChild(clone);
+    }
+
+    function initReviews() {
+        if (!track) return;
+        renderCarousel();
+    }
+
+    function openModal() {
+        if (!modalOverlay) return;
+        modalOverlay.classList.add('active');
+        modalOverlay.setAttribute('aria-hidden', 'false');
+        reviewName.focus();
+    }
+
+    function closeModal() {
+        if (!modalOverlay) return;
+        modalOverlay.classList.remove('active');
+        modalOverlay.setAttribute('aria-hidden', 'true');
+        reviewForm.reset();
+        selectedRating = 0;
+        updateStarDisplay();
+        clearErrors();
+    }
+
+    function clearErrors() {
+        document.querySelectorAll('.review-error').forEach(function(el) {
+            el.classList.remove('visible');
+        });
+    }
+
+    function showError(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('visible');
+    }
+
+    function updateStarDisplay() {
+        starButtons.forEach(function(btn) {
+            const value = parseInt(btn.getAttribute('data-value'), 10);
+            btn.classList.toggle('selected', value <= selectedRating);
+            btn.textContent = value <= selectedRating ? '★' : '☆';
+        });
+    }
+
+    if (openModalBtn) {
+        openModalBtn.addEventListener('click', openModal);
+    }
+
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', closeModal);
+    }
+
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', function(e) {
+            if (e.target === modalOverlay) {
+                closeModal();
+            }
+        });
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modalOverlay && modalOverlay.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    starButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            selectedRating = parseInt(this.getAttribute('data-value'), 10);
+            updateStarDisplay();
+        });
+
+        btn.addEventListener('mouseenter', function() {
+            const value = parseInt(this.getAttribute('data-value'), 10);
+            starButtons.forEach(function(b) {
+                const v = parseInt(b.getAttribute('data-value'), 10);
+                if (v <= value) {
+                    b.classList.add('hovered');
+                    b.textContent = '★';
+                } else {
+                    b.classList.remove('hovered');
+                    b.textContent = '☆';
+                }
+            });
+        });
+
+        btn.addEventListener('mouseleave', function() {
+            starButtons.forEach(function(b) {
+                b.classList.remove('hovered');
+            });
+            updateStarDisplay();
+        });
+    });
+
+    reviewForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        clearErrors();
+
+        const name = reviewName.value.trim();
+        const text = reviewText.value.trim();
+        let valid = true;
+
+        if (!name) {
+            showError('reviewNameError');
+            valid = false;
+        }
+
+        if (!selectedRating) {
+            showError('reviewRatingError');
+            valid = false;
+        }
+
+        if (!text) {
+            showError('reviewTextError');
+            valid = false;
+        }
+
+        if (!valid) return;
+
+        const reviews = getReviews();
+        reviews.unshift({ name: name, rating: selectedRating, review: text, date: new Date().toISOString() });
+        saveReviews(reviews);
+        renderCarousel();
+        closeModal();
+    });
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initReviews);
+    } else {
+        initReviews();
+    }
+})();
