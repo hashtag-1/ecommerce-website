@@ -58,42 +58,6 @@
         </div>
     </div>
 
-    <!-- Developers Section -->
-    <div class="footer-developers">
-        <div class="container">
-            <div class="developers-header">
-                <h4>Meet the Developers</h4>
-            </div>
-            <div class="developers-grid">
-                <div class="developer">
-                    <h5>Sanskar Sharma</h5>
-                    <a href="https://www.facebook.com/sanskar.sharma.639786" target="_blank" rel="noopener noreferrer" class="btn btn-facebook btn-xs" aria-label="Connect with Sanskar Sharma on Facebook">
-                        <i class="fab fa-facebook-f"></i> Connect
-                    </a>
-                </div>
-
-                <div class="developer">
-                    <h5>Yubesh Joshi</h5>
-                    <a href="https://www.facebook.com/yubesh.joshi" target="_blank" rel="noopener noreferrer" class="btn btn-facebook btn-xs" aria-label="Connect with Yubesh Joshi on Facebook">
-                        <i class="fab fa-facebook-f"></i> Connect
-                    </a>
-                </div>
-
-                <div class="developer" id="sandeshCard">
-                    <h5>Sandesh Bhandari</h5>
-                    <button class="btn btn-surprise btn-xs" id="surpriseBtn" aria-label="Contact Sandesh Bhandari">SURPRISE</button>
-                </div>
-
-                <div class="developer">
-                    <h5>Yubraj Bhandari</h5>
-                    <a href="https://www.facebook.com/yubraj.bhandari.39794" target="_blank" rel="noopener noreferrer" class="btn btn-facebook btn-xs" aria-label="Connect with Yubraj Bhandari on Facebook">
-                        <i class="fab fa-facebook-f"></i> Connect
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Stay Updated -->
     <div class="footer-stay-updated">
         <div class="container">
@@ -112,29 +76,6 @@
                 <p>&copy; 2026 Seed 2 Greens. All rights reserved.</p>
                 <p class="footer-made">Made with 🌱 for a greener future.</p>
             </div>
-        </div>
-    </div>
-
-    <!-- SURPRISE Light Overlay -->
-    <div class="surprise-overlay" id="surpriseOverlay" aria-hidden="true">
-        <div class="surprise-glow"></div>
-        <div class="surprise-particles" id="surpriseParticles"></div>
-        <div class="surprise-streaks">
-            <span class="streak"></span>
-            <span class="streak"></span>
-            <span class="streak"></span>
-            <span class="streak"></span>
-            <span class="streak"></span>
-            <span class="streak"></span>
-            <span class="streak"></span>
-            <span class="streak"></span>
-        </div>
-        <div class="surprise-bursts">
-            <span class="burst"></span>
-            <span class="burst"></span>
-            <span class="burst"></span>
-            <span class="burst"></span>
-            <span class="burst"></span>
         </div>
     </div>
 </footer>
