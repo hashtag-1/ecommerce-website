@@ -361,3 +361,242 @@ function updateOrderStatus($order_id, $status) {
     $stmt = $db->prepare("UPDATE orders SET status = ? WHERE id = ?");
     return $stmt->execute([$status, $order_id]);
 }
+
+// ============================================
+// CSRF Protection
+// ============================================
+
+function generateCsrfToken() {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function validateCsrfToken($token) {
+    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+}
+
+// ============================================
+// Admin Dashboard Helpers
+// ============================================
+
+function getAdminStats() {
+    global $db;
+    $stats = [];
+
+    $stmt = $db->query("SELECT COUNT(*) as count FROM orders");
+    $stats['total_orders'] = $stmt->fetch()['count'];
+
+    $stmt = $db->query("SELECT COUNT(*) as count FROM users");
+    $stats['total_customers'] = $stmt->fetch()['count'];
+
+    $stmt = $db->query("SELECT COUNT(*) as count FROM products");
+    $stats['total_products'] = $stmt->fetch()['count'];
+
+    $stmt = $db->query("SELECT SUM(total_amount) as total FROM orders WHERE status != 'Cancelled'");
+    $stats['completed_revenue'] = $stmt->fetch()['total'] ?? 0;
+
+    $stmt = $db->query("SELECT COUNT(*) as count FROM orders WHERE status = 'Pending'");
+    $stats['pending_orders'] = $stmt->fetch()['count'];
+
+    $stmt = $db->query("SELECT COUNT(*) as count FROM orders WHERE status = 'Processing'");
+    $stats['processing_orders'] = $stmt->fetch()['count'];
+
+    $stmt = $db->query("SELECT COUNT(*) as count FROM orders WHERE status = 'Delivered'");
+    $stats['delivered_orders'] = $stmt->fetch()['count'];
+
+    return $stats;
+}
+
+function getRecentOrders($limit = 5) {
+    global $db;
+    $stmt = $db->prepare("
+        SELECT o.*, u.name as user_name, u.email as user_email
+        FROM orders o
+        JOIN users u ON o.user_id = u.id
+        ORDER BY o.created_at DESC
+        LIMIT ?
+    ");
+    $stmt->execute([(int)$limit]);
+    return $stmt->fetchAll();
+}
+
+function getOrders($search = '', $status = '', $page = 1, $limit = 10) {
+    global $db;
+    $offset = ($page - 1) * $limit;
+    $params = [];
+    $where = [];
+
+    if ($search) {
+        $where[] = "(o.id LIKE ? OR o.customer_name LIKE ? OR o.customer_email LIKE ?)";
+        $params[] = "%$search%";
+        $params[] = "%$search%";
+        $params[] = "%$search%";
+    }
+
+    if ($status) {
+        $where[] = "o.status = ?";
+        $params[] = $status;
+    }
+
+    $sql = "
+        SELECT o.*, u.name as user_name, u.email as user_email
+        FROM orders o
+        JOIN users u ON o.user_id = u.id
+    ";
+
+    if ($where) {
+        $sql .= " WHERE " . implode(' AND ', $where);
+    }
+
+    $sql .= " ORDER BY o.created_at DESC LIMIT ? OFFSET ?";
+    $params[] = (int)$limit;
+    $params[] = (int)$offset;
+
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll();
+}
+
+function getOrdersCount($search = '', $status = '') {
+    global $db;
+    $params = [];
+    $where = [];
+
+    if ($search) {
+        $where[] = "(o.id LIKE ? OR o.customer_name LIKE ? OR o.customer_email LIKE ?)";
+        $params[] = "%$search%";
+        $params[] = "%$search%";
+        $params[] = "%$search%";
+    }
+
+    if ($status) {
+        $where[] = "o.status = ?";
+        $params[] = $status;
+    }
+
+    $sql = "SELECT COUNT(*) as count FROM orders o";
+    if ($where) {
+        $sql .= " WHERE " . implode(' AND ', $where);
+    }
+
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetch()['count'];
+}
+
+function getCustomerById($id) {
+    global $db;
+    $stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
+    $stmt->execute([$id]);
+    return $stmt->fetch();
+}
+
+function getCustomerOrderStats($user_id) {
+    global $db;
+    $stats = [];
+
+    $stmt = $db->prepare("SELECT COUNT(*) as count FROM orders WHERE user_id = ?");
+    $stmt->execute([$user_id]);
+    $stats['total_orders'] = $stmt->fetch()['count'];
+
+    $stmt = $db->prepare("SELECT SUM(total_amount) as total FROM orders WHERE user_id = ? AND status != 'Cancelled'");
+    $stmt->execute([$user_id]);
+    $stats['total_spent'] = $stmt->fetch()['total'] ?? 0;
+
+    return $stats;
+}
+
+function getCustomerOrderHistory($user_id) {
+    global $db;
+    $stmt = $db->prepare("
+        SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC
+    ");
+    $stmt->execute([$user_id]);
+    return $stmt->fetchAll();
+}
+
+function getLowStockProducts($threshold = 10) {
+    global $db;
+    $stmt = $db->prepare("
+        SELECT p.*, c.name as category_name
+        FROM products p
+        JOIN categories c ON p.category_id = c.id
+        WHERE p.stock_quantity <= ? AND p.status = 'active'
+        ORDER BY p.stock_quantity ASC
+    ");
+    $stmt->execute([(int)$threshold]);
+    return $stmt->fetchAll();
+}
+
+function getOutOfStockProducts() {
+    global $db;
+    $stmt = $db->prepare("
+        SELECT p.*, c.name as category_name
+        FROM products p
+        JOIN categories c ON p.category_id = c.id
+        WHERE p.stock_quantity = 0 AND p.status = 'active'
+        ORDER BY p.name ASC
+    ");
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
+function getRecentActivity($limit = 10) {
+    global $db;
+    $activities = [];
+
+    $stmt = $db->prepare("
+        SELECT id, customer_name, created_at, 'New order' as activity
+        FROM orders ORDER BY created_at DESC LIMIT ?
+    ");
+    $stmt->execute([(int)$limit]);
+    $orders = $stmt->fetchAll();
+
+    foreach ($orders as $order) {
+        $activities[] = [
+            'text' => 'New order #' . str_pad($order['id'], 4, '0', STR_PAD_LEFT) . ' placed by ' . $order['customer_name'],
+            'time' => $order['created_at'],
+            'icon' => 'fa-shopping-bag',
+            'color' => '#2e7d32'
+        ];
+    }
+
+    $stmt = $db->prepare("
+        SELECT id, name, created_at FROM users ORDER BY created_at DESC LIMIT 5
+    ");
+    $stmt->execute();
+    $users = $stmt->fetchAll();
+
+    foreach ($users as $user) {
+        $activities[] = [
+            'text' => 'New customer registered: ' . $user['name'],
+            'time' => $user['created_at'],
+            'icon' => 'fa-user-plus',
+            'color' => '#1976d2'
+        ];
+    }
+
+    usort($activities, function($a, $b) {
+        return strtotime($b['time']) - strtotime($a['time']);
+    });
+
+    return array_slice($activities, 0, $limit);
+}
+
+function getAllStatuses() {
+    return ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+}
+
+function formatAdminCurrency($amount) {
+    return 'Rs. ' . number_format($amount, 2);
+}
+
+function timeAgo($datetime) {
+    $time = time() - strtotime($datetime);
+    if ($time < 60) return 'Just now';
+    if ($time < 3600) return floor($time / 60) . ' min ago';
+    if ($time < 86400) return floor($time / 3600) . ' hours ago';
+    return date('M d, Y', strtotime($datetime));
+}

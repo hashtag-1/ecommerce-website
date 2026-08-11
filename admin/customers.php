@@ -1,5 +1,5 @@
 <?php
-// Seed2Greens - Admin Users Page
+// Seed2Greens - Admin Customers Page
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/auth.php';
 
@@ -7,20 +7,8 @@ if (!isAdminLoggedIn()) {
     redirect('login.php');
 }
 
-$page_title = 'Manage Users - Seed2Greens Admin';
+$page_title = 'Manage Customers - Seed2Greens Admin';
 $users = getAllUsers();
-
-// Handle Delete
-if (isset($_GET['delete'])) {
-    if (!validateCsrfToken($_GET['csrf_token'] ?? '')) {
-        setFlashMessage('Invalid request. Please try again.', 'error');
-        redirect('users.php');
-    }
-    $user_id = (int)$_GET['delete'];
-    deleteUser($user_id);
-    setFlashMessage('User deleted successfully', 'success');
-    redirect('users.php');
-}
 ?>
 
 <!DOCTYPE html>
@@ -43,7 +31,7 @@ if (isset($_GET['delete'])) {
             <ul class="admin-nav">
                 <li><a href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
                 <li><a href="orders.php"><i class="fas fa-shopping-bag"></i> Orders</a></li>
-                <li><a href="users.php" class="active"><i class="fas fa-users"></i> Customers</a></li>
+                <li><a href="customers.php" class="active"><i class="fas fa-users"></i> Customers</a></li>
                 <li><a href="products.php"><i class="fas fa-box"></i> Products</a></li>
                 <li><a href="categories.php"><i class="fas fa-list"></i> Categories</a></li>
                 <li><a href="../index.php" target="_blank"><i class="fas fa-external-link-alt"></i> View Site</a></li>
@@ -77,7 +65,7 @@ if (isset($_GET['delete'])) {
                         </thead>
                         <tbody>
                             <?php if (empty($users)): ?>
-                                <tr><td colspan="6" style="text-align: center; padding: 30px;">No users found</td></tr>
+                                <tr><td colspan="6" style="text-align: center; padding: 30px;">No customers found</td></tr>
                             <?php else: ?>
                                 <?php foreach ($users as $user): ?>
                                     <tr>
@@ -86,14 +74,7 @@ if (isset($_GET['delete'])) {
                                         <td><?php echo sanitize($user['email']); ?></td>
                                         <td><?php echo sanitize($user['phone']); ?></td>
                                         <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
-                                        <td>
-                                            <div class="admin-actions">
-                                                <a href="customer-details.php?id=<?php echo $user['id']; ?>" class="btn btn-primary btn-sm">View</a>
-                                                <a href="users.php?delete=<?php echo $user['id']; ?>&csrf_token=<?php echo urlencode(generateCsrfToken()); ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this user? This will delete their cart and wishlist. Orders will be preserved for records.')">
-                                                    <i class="fas fa-trash"></i>
-                                                </a>
-                                            </div>
-                                        </td>
+                                        <td><a href="customer-details.php?id=<?php echo $user['id']; ?>" class="btn btn-primary btn-sm">View Details</a></td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>

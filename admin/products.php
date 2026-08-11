@@ -45,16 +45,18 @@ if ($search) {
 </head>
 <body>
     <div class="admin-layout">
-        <aside class="admin-sidebar">
+        <div class="admin-sidebar-overlay" id="sidebarOverlay"></div>
+        
+        <aside class="admin-sidebar" id="adminSidebar">
             <div class="admin-sidebar-header">
                 <h2><i class="fas fa-leaf"></i> Seed2Greens</h2>
             </div>
             <ul class="admin-nav">
                 <li><a href="dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="orders.php"><i class="fas fa-shopping-bag"></i> Orders</a></li>
+                <li><a href="customers.php"><i class="fas fa-users"></i> Customers</a></li>
                 <li><a href="products.php" class="active"><i class="fas fa-box"></i> Products</a></li>
                 <li><a href="categories.php"><i class="fas fa-list"></i> Categories</a></li>
-                <li><a href="orders.php"><i class="fas fa-shopping-bag"></i> Orders</a></li>
-                <li><a href="users.php"><i class="fas fa-users"></i> Users</a></li>
                 <li><a href="../index.php" target="_blank"><i class="fas fa-external-link-alt"></i> View Site</a></li>
                 <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
@@ -62,7 +64,10 @@ if ($search) {
         
         <div class="admin-main">
             <header class="admin-header">
-                <h2>Products Management</h2>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <button class="admin-mobile-toggle" id="mobileToggle"><i class="fas fa-bars"></i></button>
+                    <h2>Products Management</h2>
+                </div>
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <a href="add-product.php" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Add Product</a>
                     <a href="logout.php" class="btn btn-secondary btn-sm">Logout</a>
@@ -70,24 +75,21 @@ if ($search) {
             </header>
             
             <main class="admin-content">
-                <!-- Search -->
                 <div class="admin-card" style="margin-bottom: 20px;">
-                    <form method="GET" action="" style="display: flex; gap: 10px;">
-                        <input type="text" name="search" placeholder="Search products..." value="<?php echo $search; ?>" style="flex: 1; padding: 10px 15px; border: 1px solid var(--border); border-radius: var(--radius);">
-                        <button type="submit" class="btn btn-primary">Search</button>
+                    <form method="GET" action="" class="admin-search-bar">
+                        <input type="text" name="search" placeholder="Search products..." value="<?php echo htmlspecialchars($search, ENT_QUOTES); ?>">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
                         <?php if ($search): ?>
                             <a href="products.php" class="btn btn-secondary">Clear</a>
                         <?php endif; ?>
                     </form>
                 </div>
                 
-                <!-- Products Table -->
                 <div class="admin-card">
                     <table class="data-table">
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Image</th>
                                 <th>Name</th>
                                 <th>Category</th>
                                 <th>Price</th>
@@ -97,36 +99,57 @@ if ($search) {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($products as $product): ?>
-                                <tr>
-                                    <td>#<?php echo str_pad($product['id'], 4, '0', STR_PAD_LEFT); ?></td>
-                                    <td>
-                                        <div style="width: 50px; height: 50px; background: var(--bg-green); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--primary);">
-                                            <i class="fas fa-box"></i>
-                                        </div>
-                                    </td>
-                                    <td><strong><?php echo sanitize($product['name']); ?></strong></td>
-                                    <td><?php echo sanitize($product['category_name']); ?></td>
-                                    <td>Rs. <?php echo number_format($product['price'], 2); ?></td>
-                                    <td><?php echo $product['stock_quantity']; ?> <?php echo sanitize($product['unit']); ?></td>
-                                    <td>
-                                        <span class="status status-<?php echo ($product['status'] == 'active') ? 'delivered' : 'cancelled'; ?>">
-                                            <?php echo ucfirst($product['status']); ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <a href="edit-product.php?id=<?php echo $product['id']; ?>" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i></a>
-                                        <a href="edit-product.php?id=<?php echo $product['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this product?')">
-                                            <i class="fas fa-trash"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
+                            <?php if (empty($products)): ?>
+                                <tr><td colspan="7" style="text-align: center; padding: 30px;">No products found</td></tr>
+                            <?php else: ?>
+                                <?php foreach ($products as $product): ?>
+                                    <tr>
+                                        <td>#<?php echo str_pad($product['id'], 4, '0', STR_PAD_LEFT); ?></td>
+                                        <td><strong><?php echo sanitize($product['name']); ?></strong></td>
+                                        <td><?php echo sanitize($product['category_name']); ?></td>
+                                        <td><?php echo formatAdminCurrency($product['price']); ?></td>
+                                        <td><?php echo $product['stock_quantity']; ?> <?php echo sanitize($product['unit']); ?></td>
+                                        <td>
+                                            <span class="status status-<?php echo ($product['status'] == 'active') ? 'delivered' : 'cancelled'; ?>">
+                                                <?php echo ucfirst($product['status']); ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="admin-actions">
+                                                <a href="edit-product.php?id=<?php echo $product['id']; ?>" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i></a>
+                                                <a href="edit-product.php?id=<?php echo $product['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this product?')">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
             </main>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggle = document.getElementById('mobileToggle');
+            const sidebar = document.getElementById('adminSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            if (toggle && sidebar && overlay) {
+                toggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('active');
+                    overlay.classList.toggle('active');
+                });
+
+                overlay.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                });
+            }
+        });
+    </script>
 </body>
 </html>
