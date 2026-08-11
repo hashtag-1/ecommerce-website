@@ -763,3 +763,79 @@ document.addEventListener('DOMContentLoaded', function() {
         initMusicFeature();
     }
 })();
+
+// ============================================
+// Seed2Greens - FAQ Accordion
+// ============================================
+(function() {
+    const toggleBtn = document.getElementById('faqToggleBtn');
+    const hiddenItems = document.querySelectorAll('.faq-hidden');
+    const allQuestions = document.querySelectorAll('.faq-question');
+
+    function toggleAnswer(button) {
+        const item = button.closest('.faq-item');
+        const answer = item.querySelector('.faq-answer');
+        const isExpanded = button.getAttribute('aria-expanded') === 'true';
+
+        if (isExpanded) {
+            button.setAttribute('aria-expanded', 'false');
+            answer.style.maxHeight = '0px';
+            answer.style.opacity = '0';
+            answer.hidden = true;
+        } else {
+            button.setAttribute('aria-expanded', 'true');
+            answer.hidden = false;
+            answer.style.maxHeight = answer.scrollHeight + 'px';
+            answer.style.opacity = '1';
+        }
+    }
+
+    function showMoreFaqs() {
+        hiddenItems.forEach(function(item) {
+            item.style.display = 'block';
+            const question = item.querySelector('.faq-question');
+            question.setAttribute('aria-expanded', 'false');
+            const answer = item.querySelector('.faq-answer');
+            answer.hidden = true;
+            answer.style.maxHeight = '0px';
+            answer.style.opacity = '0';
+        });
+
+        if (toggleBtn) {
+            toggleBtn.textContent = 'Show Less';
+        }
+
+        hiddenItems = document.querySelectorAll('.faq-hidden');
+    }
+
+    function showLessFaqs() {
+        const allHidden = document.querySelectorAll('.faq-item.faq-hidden');
+        allHidden.forEach(function(item) {
+            item.style.display = 'none';
+        });
+
+        if (toggleBtn) {
+            toggleBtn.textContent = 'More FAQs';
+        }
+
+        hiddenItems = allHidden;
+    }
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+            const isHidden = hiddenItems.length > 0 && hiddenItems[0].style.display !== 'block';
+
+            if (isHidden) {
+                showMoreFaqs();
+            } else {
+                showLessFaqs();
+            }
+        });
+    }
+
+    allQuestions.forEach(function(button) {
+        button.addEventListener('click', function() {
+            toggleAnswer(button);
+        });
+    });
+})();
