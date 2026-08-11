@@ -1059,7 +1059,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function initReviews() {
         if (!track) return;
         renderCarousel();
-        startCarouselAnimation();
+        currentTranslate = 0;
+        prevTranslate = 0;
+        track.style.transform = 'translate3d(0, 0, 0)';
     }
 
     let carouselAnimationId = null;
@@ -1150,14 +1152,97 @@ document.addEventListener('DOMContentLoaded', function() {
             carouselPaused = false;
         });
 
+        let isDragging = false;
+        let startX = 0;
+        let scrollStart = 0;
+        let currentTranslate = 0;
+        let prevTranslate = 0;
+
+        function getClientX(e) {
+            if (e.touches && e.touches.length > 0) {
+                return e.touches[0].clientX;
+            }
+            if (e.changedTouches && e.changedTouches.length > 0) {
+                return e.changedTouches[0].clientX;
+            }
+            return e.clientX;
+        }
+
+        function setTransformPosition() {
+            track.style.transform = 'translate3d(' + currentTranslate + 'px, 0, 0)';
+        }
+
+        function clampTranslate(value) {
+            const totalWidth = getTotalWidth();
+            const carouselWidth = carousel.offsetWidth;
+            const minTranslate = -(totalWidth - carouselWidth);
+            const maxTranslate = 0;
+            return Math.max(minTranslate, Math.min(maxTranslate, value));
+        }
+
+        function animationLoop() {
+            if (!isDragging) {
+                setTransformPosition();
+            }
+            requestAnimationFrame(animationLoop);
+        }
+
+        carousel.addEventListener('mousedown', function(e) {
+            isDragging = true;
+            track.classList.add('dragging');
+            startX = getClientX(e);
+            scrollStart = currentTranslate;
+            track.style.transition = 'none';
+        });
+
+        carousel.addEventListener('touchstart', function(e) {
+            isDragging = true;
+            track.classList.add('dragging');
+            startX = getClientX(e);
+            scrollStart = currentTranslate;
+            track.style.transition = 'none';
+        }, { passive: true });
+
+        window.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            const currentX = getClientX(e);
+            const diff = currentX - startX;
+            currentTranslate = clampTranslate(scrollStart + diff);
+        });
+
+        window.addEventListener('touchmove', function(e) {
+            if (!isDragging) return;
+            const currentX = getClientX(e);
+            const diff = currentX - startX;
+            currentTranslate = clampTranslate(scrollStart + diff);
+        }, { passive: true });
+
+        function endDrag() {
+            if (!isDragging) return;
+            isDragging = false;
+            track.classList.remove('dragging');
+            track.style.transition = 'transform 0.1s ease-out';
+            prevTranslate = currentTranslate;
+        }
+
+        window.addEventListener('mouseup', endDrag);
+        window.addEventListener('mouseleave', function() {
+            if (isDragging) endDrag();
+        });
+        window.addEventListener('touchend', endDrag);
+        window.addEventListener('touchcancel', endDrag);
+
+        requestAnimationFrame(animationLoop);
+
         let resizeTimer;
         window.addEventListener('resize', function() {
             clearTimeout(resizeTimer);
             resizeTimer = setTimeout(function() {
                 cardWidth = getCardWidth();
                 gap = getGap();
-                carouselOffset = 0;
-                track.style.transform = 'translate3d(0, 0, 0)';
+                currentTranslate = clampTranslate(currentTranslate);
+                prevTranslate = currentTranslate;
+                track.style.transform = 'translate3d(' + currentTranslate + 'px, 0, 0)';
             }, 250);
         });
 
@@ -1165,7 +1250,8 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(function() {
                 cardWidth = getCardWidth();
                 gap = getGap();
-                carouselOffset = 0;
+                currentTranslate = 0;
+                prevTranslate = 0;
                 track.style.transform = 'translate3d(0, 0, 0)';
             }, 500);
         });
