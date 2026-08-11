@@ -28,6 +28,18 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <li><a href="contact.php" class="<?php echo ($current_page == 'contact.php') ? 'active' : ''; ?>">Contact</a></li>
         </ul>
 
+        <div class="nav-search" id="navSearch">
+            <input type="text" id="searchInput" placeholder="Search products..." autocomplete="off" aria-label="Search products">
+            <button type="button" id="searchSubmit" aria-label="Submit search">
+                <i class="fas fa-search"></i>
+            </button>
+            <div class="search-dropdown" id="searchDropdown" hidden>
+                <div class="search-dropdown-content" id="searchResults">
+                    <div class="search-loading">Searching...</div>
+                </div>
+            </div>
+        </div>
+
         <div class="nav-actions">
             <a href="wishlist.php" class="nav-icon">
                 <i class="fas fa-heart"></i>
@@ -44,5 +56,14 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <span></span>
             <span></span>
         </button>
+    </div>
+
+    <div class="mobile-search-row">
+        <div class="nav-search">
+            <input type="text" id="mobileSearchInput" placeholder="Search products..." autocomplete="off" aria-label="Search products">
+            <button type="button" id="mobileSearchSubmit" aria-label="Submit search">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
     </div>
 </div>

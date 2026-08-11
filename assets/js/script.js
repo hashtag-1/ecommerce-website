@@ -781,3 +781,171 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 })();
+
+// ============================================
+// Seed2Greens - Search Functionality
+// ============================================
+(function() {
+    const desktopInput = document.getElementById('searchInput');
+    const desktopSubmit = document.getElementById('searchSubmit');
+    const mobileInput = document.getElementById('mobileSearchInput');
+    const mobileSubmit = document.getElementById('mobileSearchSubmit');
+    const searchDropdown = document.getElementById('searchDropdown');
+    const searchResults = document.getElementById('searchResults');
+
+    let debounceTimer = null;
+    let currentQuery = '';
+
+    function getProductImageSrc(product) {
+        const image = product.image || '';
+        if (!image) return '';
+        if (image.startsWith('http')) return image;
+        if (image.startsWith('img/')) return image;
+        return 'img/' + image;
+    }
+
+    function renderResults(data, query) {
+        if (!searchResults || !searchDropdown) return;
+
+        const results = data.results || [];
+        const count = data.count || 0;
+
+        if (count === 0) {
+            searchResults.innerHTML = '<div class="search-no-results">No products found for "' + query + '"</div>';
+        } else {
+            let html = '';
+            results.forEach(function(product) {
+                const imgSrc = getProductImageSrc(product);
+                const imgHtml = imgSrc 
+                    ? '<img src="' + imgSrc + '" alt="' + product.name + '" loading="lazy">'
+                    : '<i class="fas fa-box"></i>';
+                
+                html += '<a href="product.php?id=' + product.id + '" class="search-item">' +
+                    '<div class="search-item-image">' + imgHtml + '</div>' +
+                    '<div class="search-item-info">' +
+                        '<div class="search-item-name">' + product.name + '</div>' +
+                        '<div class="search-item-category">' + (product.category || '') + '</div>' +
+                    '</div>' +
+                '</a>';
+            });
+
+            if (count >= 5) {
+                html += '<div class="search-view-all" data-query="' + query + '">View all search results →</div>';
+            }
+
+            searchResults.innerHTML = html;
+
+            const viewAll = searchResults.querySelector('.search-view-all');
+            if (viewAll) {
+                viewAll.addEventListener('click', function() {
+                    window.location.href = 'products.php?search=' + encodeURIComponent(this.dataset.query);
+                });
+            }
+        }
+
+        searchDropdown.hidden = false;
+        requestAnimationFrame(function() {
+            searchDropdown.classList.add('visible');
+        });
+    }
+
+    function performSearch(query) {
+        currentQuery = query;
+        
+        if (!searchResults || !searchDropdown) return;
+        
+        if (query.length < 2) {
+            searchResults.innerHTML = '';
+            searchDropdown.classList.remove('visible');
+            setTimeout(function() {
+                if (searchDropdown && searchDropdown.classList.contains('visible') === false) {
+                    searchDropdown.hidden = true;
+                }
+            }, 300);
+            return;
+        }
+
+        searchResults.innerHTML = '<div class="search-loading">Searching...</div>';
+        searchDropdown.hidden = false;
+        searchDropdown.classList.add('visible');
+
+        fetch('search.php?q=' + encodeURIComponent(query))
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (query === currentQuery) {
+                    renderResults(data, query);
+                }
+            })
+            .catch(function() {
+                if (query === currentQuery) {
+                    searchResults.innerHTML = '<div class="search-no-results">Search unavailable</div>';
+                }
+            });
+    }
+
+    function closeDropdown() {
+        if (searchDropdown) {
+            searchDropdown.classList.remove('visible');
+            setTimeout(function() {
+                if (searchDropdown && searchDropdown.classList.contains('visible') === false) {
+                    searchDropdown.hidden = true;
+                }
+            }, 300);
+        }
+    }
+
+    function setupSearch(input, submitBtn) {
+        if (!input) return;
+
+        input.addEventListener('input', function() {
+            const query = input.value.trim();
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function() {
+                performSearch(query);
+            }, 250);
+        });
+
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const query = input.value.trim();
+                if (query) {
+                    window.location.href = 'products.php?search=' + encodeURIComponent(query);
+                }
+            } else if (e.key === 'Escape') {
+                closeDropdown();
+                input.blur();
+            }
+        });
+
+        if (submitBtn) {
+            submitBtn.addEventListener('click', function() {
+                const query = input.value.trim();
+                if (query) {
+                    window.location.href = 'products.php?search=' + encodeURIComponent(query);
+                }
+            });
+        }
+    }
+
+    setupSearch(desktopInput, desktopSubmit);
+    setupSearch(mobileInput, mobileSubmit);
+
+    document.addEventListener('click', function(e) {
+        const navSearch = document.getElementById('navSearch');
+        const mobileSearchRow = document.querySelector('.mobile-search-row');
+        
+        if (searchDropdown && searchDropdown.classList.contains('visible')) {
+            if (navSearch && !navSearch.contains(e.target) && 
+                mobileSearchRow && !mobileSearchRow.contains(e.target)) {
+                closeDropdown();
+            }
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeDropdown();
+        }
+    });
+})();

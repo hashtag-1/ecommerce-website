@@ -136,7 +136,7 @@ function getProductById($id) {
     return $stmt->fetch();
 }
 
-function searchProducts($search_term, $category_id = null) {
+function searchProducts($search_term, $category_id = null, $limit = null) {
     global $db;
     $sql = "SELECT p.*, c.name as category_name
             FROM products p
@@ -151,6 +151,12 @@ function searchProducts($search_term, $category_id = null) {
     }
     
     $sql .= " ORDER BY p.created_at DESC";
+    
+    if ($limit) {
+        $sql .= " LIMIT ?";
+        $params[] = (int)$limit;
+    }
+    
     $stmt = $db->prepare($sql);
     $stmt->execute($params);
     return $stmt->fetchAll();
