@@ -71,6 +71,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     <a href="login.php">Login</a>
                     <a href="register.php">Register</a>
                 <?php endif; ?>
+                <?php if (isAdminLoggedIn()): ?>
+                    <a href="admin/dashboard.php" class="admin-top-link">Admin Panel</a>
+                <?php endif; ?>
             </div>
         </div>
     </div>

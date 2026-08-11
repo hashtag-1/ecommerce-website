@@ -105,6 +105,26 @@ input, select, textarea {
     text-decoration: underline;
 }
 
+.admin-top-link {
+    display: inline-block;
+    background: var(--primary);
+    color: white !important;
+    padding: 6px 16px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13px;
+    margin-left: 15px;
+    opacity: 1 !important;
+    transition: background 0.3s, transform 0.2s;
+}
+
+.admin-top-link:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
 /* === Weather & Time Bar === */
 .weather-bar {
     background: linear-gradient(90deg, var(--footer-dark), var(--footer-secondary));
