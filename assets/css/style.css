@@ -1836,25 +1836,6 @@ input, select, textarea {
     min-width: 0;
 }
 
-.dev-avatar {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 6px;
-    background: var(--bg-green);
-}
-
-.dev-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
-}
-
 .developer h5 {
     font-size: 12px;
     margin-bottom: 6px;
@@ -2221,11 +2202,6 @@ input, select, textarea {
         gap: 8px;
     }
 
-    .dev-avatar {
-        width: 48px;
-        height: 48px;
-    }
-
     .developer h5 {
         font-size: 11px;
     }
@@ -2246,11 +2222,6 @@ input, select, textarea {
         gap: 8px;
     }
 
-    .dev-avatar {
-        width: 44px;
-        height: 44px;
-    }
-
     .developer h5 {
         font-size: 11px;
     }
@@ -2269,11 +2240,6 @@ input, select, textarea {
 
     .developers-grid {
         gap: 6px;
-    }
-
-    .dev-avatar {
-        width: 36px;
-        height: 36px;
     }
 
     .developer h5 {
