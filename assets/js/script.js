@@ -1059,6 +1059,116 @@ document.addEventListener('DOMContentLoaded', function() {
     function initReviews() {
         if (!track) return;
         renderCarousel();
+        startCarouselAnimation();
+    }
+
+    let carouselAnimationId = null;
+    let carouselPaused = false;
+    let carouselOffset = 0;
+    let cardWidth = 0;
+    let gap = 20;
+    let speed = 1.2;
+    let lastTime = 0;
+    let prefersReducedMotion = false;
+
+    try {
+        prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (e) {
+        prefersReducedMotion = false;
+    }
+
+    function getCardWidth() {
+        const firstCard = track.querySelector('.review-card');
+        if (!firstCard) return 340;
+        const style = window.getComputedStyle(firstCard);
+        const width = firstCard.offsetWidth;
+        const marginRight = parseFloat(style.marginRight) || 0;
+        return width + marginRight;
+    }
+
+    function getGap() {
+        const style = window.getComputedStyle(track);
+        const gapValue = style.gap || style.columnGap || style.rowGap;
+        if (gapValue && gapValue !== 'normal') {
+            return parseFloat(gapValue) || 20;
+        }
+        return 20;
+    }
+
+    function getTotalWidth() {
+        if (!track) return 0;
+        return track.scrollWidth / 2;
+    }
+
+    function startCarouselAnimation() {
+        if (carouselAnimationId) {
+            cancelAnimationFrame(carouselAnimationId);
+        }
+        carouselOffset = 0;
+        cardWidth = getCardWidth();
+        gap = getGap();
+        track.style.transform = 'translate3d(0, 0, 0)';
+        lastTime = performance.now();
+        animateCarousel(lastTime);
+    }
+
+    function animateCarousel(timestamp) {
+        if (!track) return;
+
+        const delta = timestamp - lastTime;
+        lastTime = timestamp;
+
+        if (!carouselPaused && !prefersReducedMotion) {
+            const totalWidth = getTotalWidth();
+            const step = (speed * delta) / 16.67;
+            carouselOffset += step;
+
+            if (carouselOffset >= totalWidth) {
+                carouselOffset = carouselOffset % totalWidth;
+            }
+
+            track.style.transform = 'translate3d(-' + carouselOffset + 'px, 0, 0)';
+        }
+
+        carouselAnimationId = requestAnimationFrame(animateCarousel);
+    }
+
+    function stopCarouselAnimation() {
+        if (carouselAnimationId) {
+            cancelAnimationFrame(carouselAnimationId);
+            carouselAnimationId = null;
+        }
+    }
+
+    const carousel = document.getElementById('reviewsCarousel');
+    if (carousel && track) {
+        carousel.addEventListener('mouseenter', function() {
+            carouselPaused = true;
+        });
+
+        carousel.addEventListener('mouseleave', function() {
+            carouselPaused = false;
+        });
+
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function() {
+                cardWidth = getCardWidth();
+                gap = getGap();
+                carouselOffset = 0;
+                track.style.transform = 'translate3d(0, 0, 0)';
+            }, 250);
+        });
+
+        window.addEventListener('orientationchange', function() {
+            setTimeout(function() {
+                cardWidth = getCardWidth();
+                gap = getGap();
+                carouselOffset = 0;
+                track.style.transform = 'translate3d(0, 0, 0)';
+            }, 500);
+        });
     }
 
     function openModal() {
