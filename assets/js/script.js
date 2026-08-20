@@ -408,303 +408,303 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============================================
 // Seed2Greens - Background Music Feature
 // ============================================
-(function() {
-    const PREFERENCE_KEY = 'seed2greens_music_preference';
-    const STATE_KEY = 'seed2greens_music_state';
-    const AUDIO_SRC = 'img/song.mp3';
-    const VOLUME = 0.5;
+// (function() {
+//     const PREFERENCE_KEY = 'seed2greens_music_preference';
+//     const STATE_KEY = 'seed2greens_music_state';
+//     const AUDIO_SRC = 'img/song.mp3';
+//     const VOLUME = 0.5;
 
-    const modalOverlay = document.getElementById('musicModalOverlay');
-    const yesBtn = document.getElementById('musicYesBtn');
-    const noBtn = document.getElementById('musicNoBtn');
-    const musicControl = document.getElementById('musicControl');
-    const musicControlIcon = document.getElementById('musicControlIcon');
-    const musicControlText = document.getElementById('musicControlText');
+//     const modalOverlay = document.getElementById('musicModalOverlay');
+//     const yesBtn = document.getElementById('musicYesBtn');
+//     const noBtn = document.getElementById('musicNoBtn');
+//     const musicControl = document.getElementById('musicControl');
+//     const musicControlIcon = document.getElementById('musicControlIcon');
+//     const musicControlText = document.getElementById('musicControlText');
 
-    let audio = null;
-    let isPlaying = false;
-    let hasEnded = false;
-    let currentTime = 0;
+//     let audio = null;
+//     let isPlaying = false;
+//     let hasEnded = false;
+//     let currentTime = 0;
 
-    function getPreference() {
-        try {
-            return sessionStorage.getItem(PREFERENCE_KEY);
-        } catch (e) {
-            return null;
-        }
-    }
+//     function getPreference() {
+//         try {
+//             return sessionStorage.getItem(PREFERENCE_KEY);
+//         } catch (e) {
+//             return null;
+//         }
+//     }
 
-    function setPreference(value) {
-        try {
-            sessionStorage.setItem(PREFERENCE_KEY, value);
-        } catch (e) {
-            // sessionStorage unavailable
-        }
-    }
+//     function setPreference(value) {
+//         try {
+//             sessionStorage.setItem(PREFERENCE_KEY, value);
+//         } catch (e) {
+//             // sessionStorage unavailable
+//         }
+//     }
 
-    function getSavedState() {
-        try {
-            const raw = sessionStorage.getItem(STATE_KEY);
-            if (!raw) return null;
-            return JSON.parse(raw);
-        } catch (e) {
-            return null;
-        }
-    }
+//     function getSavedState() {
+//         try {
+//             const raw = sessionStorage.getItem(STATE_KEY);
+//             if (!raw) return null;
+//             return JSON.parse(raw);
+//         } catch (e) {
+//             return null;
+//         }
+//     }
 
-    function saveState() {
-        try {
-            const state = {
-                currentTime: audio ? audio.currentTime : currentTime,
-                isPlaying: isPlaying,
-                hasEnded: hasEnded,
-                timestamp: Date.now()
-            };
-            sessionStorage.setItem(STATE_KEY, JSON.stringify(state));
-        } catch (e) {
-            // sessionStorage unavailable
-        }
-    }
+//     function saveState() {
+//         try {
+//             const state = {
+//                 currentTime: audio ? audio.currentTime : currentTime,
+//                 isPlaying: isPlaying,
+//                 hasEnded: hasEnded,
+//                 timestamp: Date.now()
+//             };
+//             sessionStorage.setItem(STATE_KEY, JSON.stringify(state));
+//         } catch (e) {
+//             // sessionStorage unavailable
+//         }
+//     }
 
-    function clearState() {
-        try {
-            sessionStorage.removeItem(STATE_KEY);
-        } catch (e) {
-            // sessionStorage unavailable
-        }
-    }
+//     function clearState() {
+//         try {
+//             sessionStorage.removeItem(STATE_KEY);
+//         } catch (e) {
+//             // sessionStorage unavailable
+//         }
+//     }
 
-    function closeModal() {
-        if (modalOverlay) {
-            modalOverlay.classList.remove('active');
-            modalOverlay.setAttribute('aria-hidden', 'true');
-        }
-    }
+//     function closeModal() {
+//         if (modalOverlay) {
+//             modalOverlay.classList.remove('active');
+//             modalOverlay.setAttribute('aria-hidden', 'true');
+//         }
+//     }
 
-    function showMusicControl() {
-        if (musicControl) {
-            musicControl.style.display = 'inline-flex';
-            updateMusicControlUI();
-        }
-    }
+    // function showMusicControl() {
+    //     if (musicControl) {
+    //         musicControl.style.display = 'inline-flex';
+    //         updateMusicControlUI();
+    //     }
+    // }
 
-    function hideMusicControl() {
-        if (musicControl) {
-            musicControl.style.display = 'none';
-        }
-    }
+    // function hideMusicControl() {
+    //     if (musicControl) {
+    //         musicControl.style.display = 'none';
+    //     }
+    // }
 
-    function updateMusicControlUI() {
-        if (!musicControlIcon || !musicControlText) return;
-        if (hasEnded) {
-            musicControlIcon.textContent = '🎵';
-            musicControlText.textContent = 'Finished';
-        } else if (isPlaying) {
-            musicControlIcon.textContent = '⏸';
-            musicControlText.textContent = 'Playing';
-        } else {
-            musicControlIcon.textContent = '▶';
-            musicControlText.textContent = 'Paused';
-        }
-    }
+    // function updateMusicControlUI() {
+    //     if (!musicControlIcon || !musicControlText) return;
+    //     if (hasEnded) {
+    //         musicControlIcon.textContent = '🎵';
+    //         musicControlText.textContent = 'Finished';
+    //     } else if (isPlaying) {
+    //         musicControlIcon.textContent = '⏸';
+    //         musicControlText.textContent = 'Playing';
+    //     } else {
+    //         musicControlIcon.textContent = '▶';
+    //         musicControlText.textContent = 'Paused';
+    //     }
+    // }
 
-    function createAudio(resumeFromTime) {
-        if (audio) {
-            audio.pause();
-            audio.removeAttribute('src');
-            audio.load();
-        }
+    // function createAudio(resumeFromTime) {
+    //     if (audio) {
+    //         audio.pause();
+    //         audio.removeAttribute('src');
+    //         audio.load();
+    //     }
 
-        audio = new Audio(AUDIO_SRC);
-        audio.volume = VOLUME;
-        audio.loop = false;
-        audio.preload = 'none';
+    //     audio = new Audio(AUDIO_SRC);
+    //     audio.volume = VOLUME;
+    //     audio.loop = false;
+    //     audio.preload = 'none';
 
-        if (typeof resumeFromTime === 'number' && resumeFromTime > 0) {
-            audio.currentTime = resumeFromTime;
-        }
+    //     if (typeof resumeFromTime === 'number' && resumeFromTime > 0) {
+    //         audio.currentTime = resumeFromTime;
+    //     }
 
-        audio.addEventListener('ended', function() {
-            isPlaying = false;
-            hasEnded = true;
-            currentTime = 0;
-            clearState();
-            updateMusicControlUI();
-        });
+    //     audio.addEventListener('ended', function() {
+    //         isPlaying = false;
+    //         hasEnded = true;
+    //         currentTime = 0;
+    //         clearState();
+    //         updateMusicControlUI();
+    //     });
 
-        audio.addEventListener('error', function() {
-            console.warn('Seed2Greens: Unable to load music file.');
-            isPlaying = false;
-            hasEnded = true;
-            hideMusicControl();
-            closeModal();
-            clearState();
-        });
+        // audio.addEventListener('error', function() {
+        //     console.warn('Seed2Greens: Unable to load music file.');
+        //     isPlaying = false;
+        //     hasEnded = true;
+        //     hideMusicControl();
+        //     closeModal();
+        //     clearState();
+        // });
 
-        return audio;
-    }
+//         return audio;
+//     }
 
-    function playMusic(resumeFromTime) {
-        try {
-            if (!audio) {
-                createAudio(resumeFromTime);
-            } else if (typeof resumeFromTime === 'number' && resumeFromTime > 0) {
-                audio.currentTime = resumeFromTime;
-            }
+//     function playMusic(resumeFromTime) {
+//         try {
+//             if (!audio) {
+//                 createAudio(resumeFromTime);
+//             } else if (typeof resumeFromTime === 'number' && resumeFromTime > 0) {
+//                 audio.currentTime = resumeFromTime;
+//             }
 
-            if (hasEnded) {
-                audio.currentTime = 0;
-                hasEnded = false;
-            }
+//             if (hasEnded) {
+//                 audio.currentTime = 0;
+//                 hasEnded = false;
+//             }
 
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-                playPromise.then(function() {
-                    isPlaying = true;
-                    showMusicControl();
-                    updateMusicControlUI();
-                }).catch(function(err) {
-                    console.warn('Seed2Greens: Playback failed.', err);
-                    isPlaying = false;
-                    hideMusicControl();
-                });
-            }
-        } catch (e) {
-            console.warn('Seed2Greens: Music error.', e);
-            hideMusicControl();
-        }
-    }
+//             const playPromise = audio.play();
+//             if (playPromise !== undefined) {
+//                 playPromise.then(function() {
+//                     isPlaying = true;
+//                     showMusicControl();
+//                     updateMusicControlUI();
+//                 }).catch(function(err) {
+//                     console.warn('Seed2Greens: Playback failed.', err);
+//                     isPlaying = false;
+//                     hideMusicControl();
+//                 });
+//             }
+//         } catch (e) {
+//             console.warn('Seed2Greens: Music error.', e);
+//             hideMusicControl();
+//         }
+//     }
 
-    function pauseMusic() {
-        if (audio && isPlaying) {
-            audio.pause();
-            currentTime = audio.currentTime;
-            isPlaying = false;
-            updateMusicControlUI();
-            saveState();
-        }
-    }
+//     function pauseMusic() {
+//         if (audio && isPlaying) {
+//             audio.pause();
+//             currentTime = audio.currentTime;
+//             isPlaying = false;
+//             updateMusicControlUI();
+//             saveState();
+//         }
+//     }
 
-    function resumeMusic() {
-        if (audio && !isPlaying && !hasEnded) {
-            const resumePromise = audio.play();
-            if (resumePromise !== undefined) {
-                resumePromise.then(function() {
-                    isPlaying = true;
-                    updateMusicControlUI();
-                }).catch(function(err) {
-                    console.warn('Seed2Greens: Resume failed.', err);
-                });
-            }
-        }
-    }
+//     function resumeMusic() {
+//         if (audio && !isPlaying && !hasEnded) {
+//             const resumePromise = audio.play();
+//             if (resumePromise !== undefined) {
+//                 resumePromise.then(function() {
+//                     isPlaying = true;
+//                     updateMusicControlUI();
+//                 }).catch(function(err) {
+//                     console.warn('Seed2Greens: Resume failed.', err);
+//                 });
+//             }
+//         }
+//     }
 
-    function handleMusicControlClick() {
-        if (!audio || hasEnded) {
-            if (hasEnded) {
-                hasEnded = false;
-                playMusic();
-            }
-            return;
-        }
+//     function handleMusicControlClick() {
+//         if (!audio || hasEnded) {
+//             if (hasEnded) {
+//                 hasEnded = false;
+//                 playMusic();
+//             }
+//             return;
+//         }
 
-        if (isPlaying) {
-            pauseMusic();
-        } else {
-            resumeMusic();
-        }
-    }
+//         if (isPlaying) {
+//             pauseMusic();
+//         } else {
+//             resumeMusic();
+//         }
+//     }
 
-    function showPrompt() {
-        if (modalOverlay) {
-            modalOverlay.classList.add('active');
-            modalOverlay.setAttribute('aria-hidden', 'false');
-        }
-    }
+//     function showPrompt() {
+//         if (modalOverlay) {
+//             modalOverlay.classList.add('active');
+//             modalOverlay.setAttribute('aria-hidden', 'false');
+//         }
+//     }
 
-    function restoreMusicState() {
-        const preference = getPreference();
-        if (preference !== 'yes') return;
+//     function restoreMusicState() {
+//         const preference = getPreference();
+//         if (preference !== 'yes') return;
 
-        const saved = getSavedState();
-        if (!saved) return;
+//         const saved = getSavedState();
+//         if (!saved) return;
 
-        if (saved.hasEnded) {
-            hasEnded = true;
-            currentTime = 0;
-            hideMusicControl();
-            clearState();
-            return;
-        }
+//         if (saved.hasEnded) {
+//             hasEnded = true;
+//             currentTime = 0;
+//             hideMusicControl();
+//             clearState();
+//             return;
+//         }
 
-        const resumeFrom = typeof saved.currentTime === 'number' ? saved.currentTime : 0;
-        hasEnded = false;
-        isPlaying = false;
-        currentTime = resumeFrom;
+//         const resumeFrom = typeof saved.currentTime === 'number' ? saved.currentTime : 0;
+//         hasEnded = false;
+//         isPlaying = false;
+//         currentTime = resumeFrom;
 
-        playMusic(resumeFrom);
-    }
+//         playMusic(resumeFrom);
+//     }
 
-    function initMusicFeature() {
-        const preference = getPreference();
+//     function initMusicFeature() {
+//         const preference = getPreference();
 
-        if (preference === 'yes') {
-            restoreMusicState();
-            return;
-        }
+//         if (preference === 'yes') {
+//             restoreMusicState();
+//             return;
+//         }
 
-        if (preference === 'no') {
-            return;
-        }
+//         if (preference === 'no') {
+//             return;
+//         }
 
-        setTimeout(showPrompt, 600);
-    }
+//         setTimeout(showPrompt, 600);
+//     }
 
-    if (yesBtn) {
-        yesBtn.addEventListener('click', function() {
-            setPreference('yes');
-            closeModal();
-            currentTime = 0;
-            hasEnded = false;
-            clearState();
-            playMusic(0);
-        });
-    }
+//     if (yesBtn) {
+//         yesBtn.addEventListener('click', function() {
+//             setPreference('yes');
+//             closeModal();
+//             currentTime = 0;
+//             hasEnded = false;
+//             clearState();
+//             playMusic(0);
+//         });
+//     }
 
-    if (noBtn) {
-        noBtn.addEventListener('click', function() {
-            setPreference('no');
-            closeModal();
-            hasEnded = false;
-            isPlaying = false;
-            currentTime = 0;
-            clearState();
-        });
-    }
+//     if (noBtn) {
+//         noBtn.addEventListener('click', function() {
+//             setPreference('no');
+//             closeModal();
+//             hasEnded = false;
+//             isPlaying = false;
+//             currentTime = 0;
+//             clearState();
+//         });
+//     }
 
-    if (musicControl) {
-        musicControl.addEventListener('click', function(e) {
-            e.preventDefault();
-            handleMusicControlClick();
-        });
-    }
+//     if (musicControl) {
+//         musicControl.addEventListener('click', function(e) {
+//             e.preventDefault();
+//             handleMusicControlClick();
+//         });
+//     }
 
-    window.addEventListener('beforeunload', function() {
-        if (audio && isPlaying) {
-            currentTime = audio.currentTime;
-            saveState();
-        } else if (!isPlaying && !hasEnded && currentTime > 0) {
-            saveState();
-        }
-    });
+//     window.addEventListener('beforeunload', function() {
+//         if (audio && isPlaying) {
+//             currentTime = audio.currentTime;
+//             saveState();
+//         } else if (!isPlaying && !hasEnded && currentTime > 0) {
+//             saveState();
+//         }
+//     });
 
-    // Initialize after DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initMusicFeature);
-    } else {
-        initMusicFeature();
-    }
-})();
+//     // Initialize after DOM is ready
+//     if (document.readyState === 'loading') {
+//         document.addEventListener('DOMContentLoaded', initMusicFeature);
+//     } else {
+//         initMusicFeature();
+//     }
+// })();
 
 // ============================================
 // Seed2Greens - FAQ Accordion
