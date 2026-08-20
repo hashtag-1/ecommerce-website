@@ -142,12 +142,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
             </div>
         <?php endif; ?>
         
-        <?php if (isset($_SESSION['order_debug_error'])): ?>
-            <div class="flash-message flash-error" style="border-radius: var(--radius); margin-bottom: 20px; padding: 12px;">
-                <strong>Debug:</strong> <?php echo sanitize($_SESSION['order_debug_error']); unset($_SESSION['order_debug_error']); ?>
-            </div>
-        <?php endif; ?>
-        
         <form method="POST" action="" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
             <?php if (!empty($selected_items)): ?>

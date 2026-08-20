@@ -264,7 +264,7 @@ function placeOrder($user_id, $customer_name, $customer_email, $customer_phone, 
         
     } catch (Exception $e) {
         $db->rollBack();
-        $_SESSION['order_debug_error'] = $e->getMessage();
+        error_log('Order placement failed');
         return false;
     }
 }

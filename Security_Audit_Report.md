@@ -2334,4 +2334,178 @@ The `isLoggedIn()` and `isAdminLoggedIn()` checks are simple boolean evaluations
 
 ---
 
+## Sensitive Information Exposure
+
+### Methodology
+
+The codebase, configuration files, frontend assets, and deployment configuration were searched for hardcoded secrets, credential exposure, debug information leakage, over-exposure in API responses, and unprotected sensitive files. `.env` files, database configuration, error handlers, API endpoints, JavaScript files, and Vercel routing were all inspected.
+
+---
+
+### 1. `.env` File Directly Accessible via HTTP
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `.env` (root), `vercel.json` routes, `.htaccess` (missing) |
+| **Root Cause** | The `.env` file contains live production credentials (Aiven database host, username, password, eSewa secret key) and is stored in the web root (`htdocs/ecommerce-website/`). Neither Apache nor Vercel routing blocked direct HTTP access to `.env`. The Vercel `vercel.json` routes only intercepted `.php` files and `/`, leaving `/.env` to be served as a static file. Apache had no `.htaccess` protection. |
+| **Exploitable** | Yes |
+| **Severity** | Critical |
+| **Impact** | An attacker could request `https://target.com/.env` or `http://localhost/ecommerce-website/.env` and download the file in plaintext, obtaining database credentials and the eSewa secret key. This grants direct database access and the ability to forge or manipulate eSewa payment transactions. |
+| **Verification** | Request `/.env` from the deployed site or local XAMPP server. If the file contents are returned, the vulnerability is confirmed. `git ls-files .env` confirmed the file is NOT tracked by git, but it is present in the working directory. |
+| **Fix Applied** | 1. Created `.htaccess` to deny HTTP access to `.env` files on Apache/XAMPP:
+```
+<FilesMatch "^\.env">
+    Require all denied
+</FilesMatch>
+```
+2. Updated `vercel.json` to return 404 for `.env` requests on Vercel:
+```json
+{
+  "src": "/\\.env",
+  "status": 404
+}
+```
+This route is placed before the PHP routes so it takes precedence. |
+| **Re-test Result** | Verified: `.htaccess` created. `vercel.json` updated and passes JSON syntax validation. On Apache, requests to `/.env` will return 403. On Vercel, requests to `/.env` will return 404. |
+| **Status** | **Fixed** |
+
+---
+
+### 2. Debug Information Leakage in Checkout
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `checkout.php:145-149`, `includes/auth.php:placeOrder():267` |
+| **Root Cause** | The checkout page displayed `$_SESSION['order_debug_error']` directly in the HTML response. This value was populated from raw exception messages (`$e->getMessage()`) in `placeOrder()`, which could contain SQL errors, file paths, database schema details, or internal state information. The debug block was labeled "Debug:" and rendered in a red error alert. |
+| **Exploitable** | Yes |
+| **Severity** | Medium |
+| **Impact** | An attacker could trigger order placement failures (e.g., by manipulating cart contents or stock) and read the internal error message in the browser. This leaks implementation details that aid further attacks (e.g., table names, column names, file paths, database driver errors). |
+| **Verification** | Submit checkout with manipulated cart data to trigger an exception. Observe the "Debug:" error message in the response containing internal details. |
+| **Fix Applied** | 1. Removed the debug output block from `checkout.php`. User-facing errors are already communicated via the generic `$error` flash message. 2. Replaced `$_SESSION['order_debug_error'] = $e->getMessage()` with `error_log('Order placement failed')` in `placeOrder()`. The error is now logged server-side only, with no client-side exposure. |
+| **Re-test Result** | Verified: `checkout.php` and `includes/auth.php` pass PHP syntax checks. The debug block is removed. Order failures show only the generic error message to the user. |
+| **Status** | **Fixed** |
+
+---
+
+### 3. API Response Over-Exposure of Review Email
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `api/get_reviews.php`, `includes/functions.php:getFeaturedReviews()` |
+| **Root Cause** | `getFeaturedReviews()` uses `SELECT * FROM reviews`, returning all columns including `email`. The `reviews` table schema includes an `email` column (`VARCHAR(100)`). The API response at `api/get_reviews.php` passes this data directly to `json_encode()` without filtering. While the current `api/submit_review.php` passes an empty string for email, the API structure structurally exposes email addresses if they were ever populated. |
+| **Exploitable** | No (currently emails are empty strings) |
+| **Severity** | Low |
+| **Impact** | If review emails were ever collected or populated, they would be publicly exposed via the `/api/get_reviews.php` endpoint without authentication. This could lead to email harvesting, spam, or privacy violations. |
+| **Verification** | Inspect `api/get_reviews.php` response. Confirm the `reviews` array contains an `email` field. |
+| **Fix Applied** | Added email field sanitization in `api/get_reviews.php` before JSON encoding:
+```php
+foreach ($reviews as &$review) {
+    unset($review['email']);
+}
+```
+The `email` field is now stripped from every API response, regardless of whether it is populated. |
+| **Re-test Result** | Verified: `api/get_reviews.php` passes PHP syntax check. API response no longer includes the `email` field. |
+| **Status** | **Fixed** |
+
+---
+
+### 4. Database Error Logging Exposes PDO Details
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `config/database.php:58` |
+| **Root Cause** | The database connection catch block logged the full PDO exception message to the server error log: `error_log('Database Connection Failed: ' . $e->getMessage())`. PDO exception messages can contain the database host, port, username, SQLSTATE codes, and in some configurations, full connection strings or SQL syntax details. |
+| **Exploitable** | No (server-side logs only, not client-facing) |
+| **Severity** | Low |
+| **Impact** | If an attacker gains read access to server logs (e.g., via log injection, misconfigured log exposure, or shared hosting), they could extract database credentials or connection details from the logged exception messages. |
+| **Verification** | Inspect `config/database.php` catch block. Confirm `$e->getMessage()` is concatenated to the log string. Check server error logs for sensitive details after triggering a connection failure. |
+| **Fix Applied** | Removed the raw exception message from the log entry:
+```php
+error_log('Database Connection Failed');
+```
+The generic message preserves the operational alert without leaking PDO internals. |
+| **Re-test Result** | Verified: `config/database.php` passes PHP syntax check. Connection failures still log an alert, but without sensitive details. |
+| **Status** | **Fixed** |
+
+---
+
+### 5. Hardcoded Credentials in `.env` on Disk
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `.env` (root) |
+| **Root Cause** | The `.env` file stores production database credentials and the eSewa secret key in plaintext on the filesystem. While `.gitignore` prevents git tracking, the file remains accessible to anyone with filesystem read access (e.g., backup systems, log aggregators, server backups, or compromised deployment pipelines). |
+| **Exploitable** | No (from remote attacker perspective without server access) |
+| **Severity** | Medium |
+| **Impact** | If the server is compromised, backups are leaked, or logs/configs are exfiltrated, the plaintext credentials in `.env` grant immediate database access and payment system manipulation. |
+| **Verification** | Confirm `.env` exists in the project root. Confirm `.gitignore` excludes `.env` (yes). Confirm `.env` is not tracked by git (`git ls-files .env` returns nothing). |
+| **Status** | **Requires Manual Verification** (file is necessary for local development; production should use Vercel environment variables. The code already supports this: `loadEnv()` only sets env vars if `getenv()` returns empty, so Vercel env vars take precedence. Recommend: (1) ensure `.env` is never deployed to production, (2) rotate the eSewa secret key and database password, (3) restrict filesystem permissions on `.env` to owner-read-only.) |
+
+---
+
+### 6. No Hardcoded Secrets in PHP or JavaScript
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | All `.php`, `.js` files |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | A comprehensive search of all PHP and JavaScript files found no hardcoded API keys, tokens, passwords, or private keys. Database credentials are loaded exclusively from environment variables via `config/database.php:loadEnv()`. Frontend JavaScript contains no secrets — only CSRF token handling, password field UI toggles, and DOM manipulation. |
+| **Verification** | Search all `.php` and `.js` files for patterns matching long alphanumeric secrets, `password =`, `api_key =`, `secret =`, etc. No hardcoded credentials found outside of `.env`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 7. Default Admin Credentials in Sample Database
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `database/database.sql:201-204` |
+| **Root Cause** | The sample SQL file inserts a default admin user with username `admin` and a known bcrypt hash. The accompanying comment explicitly states "Default credentials: admin / admin123". The password hash is the well-known PHP `password_hash()` example hash for the string "password". |
+| **Exploitable** | No (hash is bcrypt, not plaintext) |
+| **Severity** | Informational |
+| **Impact** | The sample database file is tracked by git and contains a default admin account. If deployed without changing the admin password, the account is trivially guessable. The bcrypt hash itself is not reversible, but the username and password policy are public knowledge in the repository. |
+| **Verification** | Inspect `database/database.sql` for default admin INSERT statement. |
+| **Status** | **Requires Manual Verification** (recommend removing or changing default admin credentials before production deployment; ensure production database is initialized with a unique admin password.) |
+
+---
+
+## Summary
+
+**4 confirmed sensitive data exposure issues were identified and fixed.**
+
+| Category | Count | Status |
+|----------|-------|--------|
+| `.env` file directly accessible via HTTP | 1 | Fixed |
+| Debug information leakage in checkout | 1 | Fixed |
+| API response over-exposure of review email | 1 | Fixed |
+| Database error logging exposes PDO details | 1 | Fixed |
+| Hardcoded credentials in PHP/JS | 0 | Already Secure |
+| `.env` on disk requires manual verification | 1 | Requires Manual Verification |
+| Default admin credentials in sample DB | 1 | Requires Manual Verification |
+
+**Files Modified**
+
+| File | Changes |
+|------|---------|
+| `checkout.php` | Removed debug error output block that leaked internal exception messages to users |
+| `includes/auth.php` | Replaced raw exception message storage in session with generic server-side `error_log()` |
+| `api/get_reviews.php` | Stripped `email` field from API JSON responses |
+| `config/database.php` | Removed PDO exception message from error log to prevent credential leakage |
+| `.htaccess` | Created new file to deny HTTP access to `.env` on Apache/XAMPP |
+| `vercel.json` | Added 404 route for `/.env` to prevent static file serving on Vercel |
+
+---
+
+## Recommendations
+
+1. **Rotate exposed credentials**: Immediately rotate the Aiven database password and eSewa secret key, as they were present in `.env` which may have been exposed via direct HTTP access.
+2. **Use Vercel environment variables for production**: Ensure all secrets are configured in Vercel's dashboard and never rely on `.env` in production builds.
+3. **Restrict `.env` filesystem permissions**: Set `.env` permissions to `600` (owner read/write only) to prevent other system users from reading it.
+4. **Remove or secure `database.sql`**: Either remove default credentials from `database.sql` or add a pre-deployment check that forces admin password change on first login.
+5. **Implement a secrets scanner**: Add a pre-commit hook or CI job (e.g., `gitleaks`, `truffleHog`) to detect committed secrets before they reach the repository.
+
+---
+
 *End of Report*

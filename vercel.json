@@ -7,6 +7,10 @@
   },
   "routes": [
     {
+      "src": "/\\.env",
+      "status": 404
+    },
+    {
       "src": "/",
       "dest": "/api/index.php?file=index.php"
     },
