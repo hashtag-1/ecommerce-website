@@ -25,18 +25,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
         $error = 'Please enter a valid email address';
     } elseif (!validatePhone($phone)) {
         $error = 'Please enter a valid 10-digit phone number';
-    } elseif (strlen($password) < 6) {
-        $error = 'Password must be at least 6 characters long';
-    } elseif ($password !== $confirm_password) {
-        $error = 'Passwords do not match';
     } else {
-        // Check if email already exists
-        global $db;
-        $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
-        $stmt->execute([$email]);
-        if ($stmt->fetch()) {
-            $error = 'Email is already registered. Please use a different email.';
+        $password_check = validatePasswordStrength($password);
+        if ($password_check !== true) {
+            $error = $password_check;
+        } elseif ($password !== $confirm_password) {
+            $error = 'Passwords do not match';
         } else {
+            // Check if email already exists
+            global $db;
+            $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
+            $stmt->execute([$email]);
+            if ($stmt->fetch()) {
+                $error = 'Registration failed. Please try again.';
+            } else {
             if (registerUser($name, $email, $phone, $password, $address)) {
                 setFlashMessage('Registration successful! Please login.', 'success');
                 redirect('login.php');
@@ -45,6 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
             }
         }
     }
+}
 }
 ?>
 
@@ -88,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
             <div class="form-group">
                 <label for="password">Password *</label>
                 <div style="position: relative;">
-                    <input type="password" id="password" name="password" placeholder="At least 6 characters" required>
+                    <input type="password" id="password" name="password" placeholder="At least 8 characters with uppercase, lowercase, and number" required>
                     <button type="button" class="password-toggle" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-light);">
                         <i class="fas fa-eye"></i>
                     </button>

@@ -1,5 +1,15 @@
 <?php
 // Seed2Greens - Helper Functions
+
+$is_https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => '',
+    'secure' => $is_https,
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
 session_start();
 require_once __DIR__ . '/../config/database.php';
 
@@ -33,6 +43,57 @@ function validateEmail($email) {
 
 function validatePhone($phone) {
     return preg_match('/^[0-9]{10}$/', $phone);
+}
+
+function checkLoginRateLimit($type = 'user') {
+    $key = $type . '_login_attempts';
+    if (!isset($_SESSION[$key])) {
+        $_SESSION[$key] = ['count' => 0, 'first_attempt' => time()];
+    }
+    
+    $data = $_SESSION[$key];
+    $window = 300;
+    $max_attempts = 5;
+    
+    if (time() - $data['first_attempt'] > $window) {
+        $_SESSION[$key] = ['count' => 0, 'first_attempt' => time()];
+        return true;
+    }
+    
+    if ($data['count'] >= $max_attempts) {
+        return false;
+    }
+    
+    return true;
+}
+
+function recordLoginAttempt($type = 'user') {
+    $key = $type . '_login_attempts';
+    if (!isset($_SESSION[$key])) {
+        $_SESSION[$key] = ['count' => 0, 'first_attempt' => time()];
+    }
+    $_SESSION[$key]['count']++;
+}
+
+function clearLoginAttempts($type = 'user') {
+    $key = $type . '_login_attempts';
+    unset($_SESSION[$key]);
+}
+
+function validatePasswordStrength($password) {
+    if (strlen($password) < 8) {
+        return 'Password must be at least 8 characters long';
+    }
+    if (!preg_match('/[A-Z]/', $password)) {
+        return 'Password must contain at least one uppercase letter';
+    }
+    if (!preg_match('/[a-z]/', $password)) {
+        return 'Password must contain at least one lowercase letter';
+    }
+    if (!preg_match('/[0-9]/', $password)) {
+        return 'Password must contain at least one number';
+    }
+    return true;
 }
 
 function hashPassword($password) {

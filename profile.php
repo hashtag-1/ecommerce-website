@@ -39,15 +39,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
         if (!empty($current_password) && !empty($new_password)) {
             if (!verifyPassword($current_password, $user['password'])) {
                 $error = 'Current password is incorrect';
-            } elseif (strlen($new_password) < 6) {
-                $error = 'New password must be at least 6 characters';
-            } elseif ($new_password !== $confirm_new_password) {
-                $error = 'New passwords do not match';
             } else {
-                $new_hashed = hashPassword($new_password);
-                $stmt = $db->prepare("UPDATE users SET password = ? WHERE id = ?");
-                $stmt->execute([$new_hashed, $user_id]);
-                $success = 'Profile and password updated successfully!';
+                $password_check = validatePasswordStrength($new_password);
+                if ($password_check !== true) {
+                    $error = $password_check;
+                } elseif ($new_password !== $confirm_new_password) {
+                    $error = 'New passwords do not match';
+                } else {
+                    $new_hashed = hashPassword($new_password);
+                    $stmt = $db->prepare("UPDATE users SET password = ? WHERE id = ?");
+                    $stmt->execute([$new_hashed, $user_id]);
+                    $success = 'Profile and password updated successfully!';
+                }
             }
         } else {
             $success = 'Profile updated successfully!';

@@ -52,8 +52,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_credentials']))
             }
 
             if (!$error && $password_changed) {
-                if (strlen($new_password) < 6) {
-                    $error = 'New password must be at least 6 characters.';
+                $password_check = validatePasswordStrength($new_password);
+                if ($password_check !== true) {
+                    $error = $password_check;
                 } elseif ($new_password !== $confirm_password) {
                     $error = 'New password confirmation does not match.';
                 }

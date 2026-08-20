@@ -23,27 +23,36 @@ function registerUser($name, $email, $phone, $password, $address = '') {
 function loginUser($email, $password) {
     global $db;
     
+    if (!checkLoginRateLimit('user')) {
+        return 'rate_limited';
+    }
+    
     $stmt = $db->prepare("SELECT * FROM users WHERE email = ?");
     $stmt->execute([$email]);
     $user = $stmt->fetch();
     
     if ($user && verifyPassword($password, $user['password'])) {
+        session_regenerate_id(true);
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_name'] = $user['name'];
         $_SESSION['user_email'] = $user['email'];
         $_SESSION['user_phone'] = $user['phone'];
         $_SESSION['user_address'] = $user['address'];
+        clearLoginAttempts('user');
         return true;
     }
+    
+    recordLoginAttempt('user');
     return false;
 }
 
 function logoutUser() {
-    unset($_SESSION['user_id']);
-    unset($_SESSION['user_name']);
-    unset($_SESSION['user_email']);
-    unset($_SESSION['user_phone']);
-    unset($_SESSION['user_address']);
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+    }
+    session_destroy();
 }
 
 // ============================================
@@ -53,23 +62,34 @@ function logoutUser() {
 function loginAdmin($username, $password) {
     global $db;
     
+    if (!checkLoginRateLimit('admin')) {
+        return 'rate_limited';
+    }
+    
     $stmt = $db->prepare("SELECT * FROM admin WHERE username = ?");
     $stmt->execute([$username]);
     $admin = $stmt->fetch();
     
     if ($admin && verifyPassword($password, $admin['password'])) {
+        session_regenerate_id(true);
         $_SESSION['admin_id'] = $admin['id'];
         $_SESSION['admin_name'] = $admin['name'];
         $_SESSION['admin_username'] = $admin['username'];
+        clearLoginAttempts('admin');
         return true;
     }
+    
+    recordLoginAttempt('admin');
     return false;
 }
 
 function logoutAdmin() {
-    unset($_SESSION['admin_id']);
-    unset($_SESSION['admin_name']);
-    unset($_SESSION['admin_username']);
+    $_SESSION = [];
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+    }
+    session_destroy();
 }
 
 // ============================================

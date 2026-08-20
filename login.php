@@ -11,19 +11,28 @@ if (isLoggedIn()) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
-    $email = sanitize($_POST['email']);
-    $password = $_POST['password'];
-    
-    if (empty($email) || empty($password)) {
-        $error = 'Please fill in all fields';
-    } elseif (!validateEmail($email)) {
-        $error = 'Please enter a valid email address';
+    if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid request. Please try again.';
     } else {
-        if (loginUser($email, $password)) {
-            setFlashMessage('Login successful! Welcome back.', 'success');
-            redirect('index.php');
+        $email = sanitize($_POST['email']);
+        $password = $_POST['password'];
+        
+        if (empty($email) || empty($password)) {
+            $error = 'Please fill in all fields';
+        } elseif (!validateEmail($email)) {
+            $error = 'Please enter a valid email address';
+        } elseif (!checkLoginRateLimit('user')) {
+            $error = 'Too many login attempts. Please try again later.';
         } else {
-            $error = 'Invalid email or password';
+            $login_result = loginUser($email, $password);
+            if ($login_result === true) {
+                setFlashMessage('Login successful! Welcome back.', 'success');
+                redirect('index.php');
+            } elseif ($login_result === 'rate_limited') {
+                $error = 'Too many login attempts. Please try again later.';
+            } else {
+                $error = 'Invalid email or password';
+            }
         }
     }
 }
@@ -46,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['login'])) {
         <?php endif; ?>
         
         <form method="POST" action="">
+            <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
             <div class="form-group">
                 <label for="email">Email Address</label>
                 <input type="email" id="email" name="email" value="<?php echo isset($_POST['email']) ? sanitize($_POST['email']) : ''; ?>" placeholder="Enter your email" required>
