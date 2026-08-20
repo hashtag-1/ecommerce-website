@@ -1282,6 +1282,14 @@ input, select, textarea {
     font-weight: 600;
 }
 
+.cart-item-checkbox,
+#selectAll {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--primary);
+}
+
 .empty-cart {
     text-align: center;
     padding: 60px 20px;

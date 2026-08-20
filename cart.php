@@ -52,6 +52,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_cart'])) {
     $product_id = (int)$_POST['product_id'];
     $quantity = (int)$_POST['quantity'];
     updateCartQuantity($user_id, $product_id, $quantity);
+    
+    if ($is_ajax) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'cart_count' => getCartCount($user_id),
+            'cart_total' => getCartTotal($user_id)
+        ]);
+        exit();
+    }
+    
     setFlashMessage('Cart updated', 'success');
     redirect('cart.php');
 }
@@ -117,13 +128,13 @@ $grand_total = $cart_total + $delivery_fee;
                                             <input type="hidden" name="product_id" value="<?php echo $item['product_id']; ?>">
                                             <div class="quantity-control">
                                                 <button type="button" class="qty-minus-btn" data-action="decrease">-</button>
-                                                <input type="number" name="quantity" class="cart-quantity-input" value="<?php echo $item['quantity']; ?>" min="1" max="<?php echo $item['stock_quantity']; ?>" style="width: 50px; text-align: center; border: 1px solid var(--border); border-radius: 0; height: 36px;">
+                                                <input type="number" name="quantity" class="cart-quantity-input" value="<?php echo $item['quantity']; ?>" min="1" max="<?php echo $item['stock_quantity']; ?>" data-price="<?php echo $item['price']; ?>" style="width: 50px; text-align: center; border: 1px solid var(--border); border-radius: 0; height: 36px;">
                                                 <button type="button" class="qty-plus-btn" data-action="increase">+</button>
                                             </div>
                                             <input type="hidden" name="update_cart" value="1">
                                         </form>
                                     </td>
-                                    <td><strong>Rs. <?php echo number_format($item['subtotal'], 2); ?></strong></td>
+                                    <td class="cart-item-subtotal"><strong>Rs. <?php echo number_format($item['subtotal'], 2); ?></strong></td>
                                     <td>
                                         <a href="cart.php?remove=<?php echo $item['product_id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Remove this item from cart?')" style="padding: 6px 12px;">
                                             <i class="fas fa-trash"></i>
@@ -144,15 +155,15 @@ $grand_total = $cart_total + $delivery_fee;
                         
                         <div class="cart-summary-row">
                             <span class="label">Subtotal</span>
-                            <span class="value">Rs. <?php echo number_format($cart_total, 2); ?></span>
+                            <span class="value" id="cart-subtotal">Rs. <?php echo number_format($cart_total, 2); ?></span>
                         </div>
                         <div class="cart-summary-row">
                             <span class="label">Delivery Fee</span>
-                            <span class="value">Rs. <?php echo number_format($delivery_fee, 2); ?></span>
+                            <span class="value" id="cart-delivery-fee">Rs. <?php echo number_format($delivery_fee, 2); ?></span>
                         </div>
                         <div class="cart-summary-row total">
                             <span class="label">Total</span>
-                            <span class="value">Rs. <?php echo number_format($grand_total, 2); ?></span>
+                            <span class="value" id="cart-grand-total">Rs. <?php echo number_format($grand_total, 2); ?></span>
                         </div>
                         
                         <button type="button" id="proceed-checkout-btn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 20px; display: block; text-align: center;">

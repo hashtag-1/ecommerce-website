@@ -158,6 +158,51 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // === Auto-calculate totals on cart page ===
     const quantityInputsCart = document.querySelectorAll('.cart-quantity-input');
+    const cartSubtotalEl = document.getElementById('cart-subtotal');
+    const cartDeliveryFeeEl = document.getElementById('cart-delivery-fee');
+    const cartGrandTotalEl = document.getElementById('cart-grand-total');
+    
+    function updateCartTotals() {
+        let subtotal = 0;
+        quantityInputsCart.forEach(function(input) {
+            const price = parseFloat(input.getAttribute('data-price')) || 0;
+            const qty = parseInt(input.value) || 0;
+            subtotal += price * qty;
+        });
+        const deliveryFee = subtotal > 0 ? 50 : 0;
+        const total = subtotal + deliveryFee;
+        
+        if (cartSubtotalEl) cartSubtotalEl.textContent = 'Rs. ' + subtotal.toFixed(2);
+        if (cartDeliveryFeeEl) cartDeliveryFeeEl.textContent = 'Rs. ' + deliveryFee.toFixed(2);
+        if (cartGrandTotalEl) cartGrandTotalEl.textContent = 'Rs. ' + total.toFixed(2);
+    }
+    
+    function updateRowSubtotal(input) {
+        const price = parseFloat(input.getAttribute('data-price')) || 0;
+        const qty = parseInt(input.value) || 0;
+        const subtotal = price * qty;
+        const row = input.closest('tr');
+        const subtotalCell = row ? row.querySelector('.cart-item-subtotal') : null;
+        if (subtotalCell) {
+            subtotalCell.innerHTML = '<strong>Rs. ' + subtotal.toFixed(2) + '</strong>';
+        }
+    }
+    
+    function syncCartQuantity(input) {
+        const form = input.closest('.cart-qty-form');
+        if (!form) return;
+        
+        const formData = new FormData(form);
+        formData.append('update_cart', '1');
+        
+        fetch(form.action || window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }).catch(function() {
+            // Silently fail - UI already updated
+        });
+    }
     
     quantityInputsCart.forEach(function(input) {
         const form = input.closest('.cart-qty-form');
@@ -169,7 +214,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 let value = parseInt(input.value);
                 if (value > parseInt(input.min)) {
                     input.value = value - 1;
-                    form.submit();
+                    updateRowSubtotal(input);
+                    updateCartTotals();
+                    syncCartQuantity(input);
                 }
             });
         }
@@ -180,7 +227,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 const max = parseInt(input.max);
                 if (value < max) {
                     input.value = value + 1;
-                    form.submit();
+                    updateRowSubtotal(input);
+                    updateCartTotals();
+                    syncCartQuantity(input);
                 }
             });
         }
@@ -188,7 +237,14 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('change', function() {
             const form = this.closest('.cart-qty-form');
             if (form) {
-                form.submit();
+                let value = parseInt(this.value);
+                const min = parseInt(this.min);
+                const max = parseInt(this.max);
+                if (value < min) this.value = min;
+                if (value > max) this.value = max;
+                updateRowSubtotal(this);
+                updateCartTotals();
+                syncCartQuantity(this);
             }
         });
     });
