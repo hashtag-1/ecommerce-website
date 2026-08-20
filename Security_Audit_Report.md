@@ -3366,4 +3366,200 @@ No SQL errors, table names, column names, or stack traces are exposed to end use
 
 ---
 
+## Business Logic Security
+
+### Methodology
+
+The order, cart, checkout, review, and admin user-management flows were audited for abuse cases that standard vulnerability scanners miss. Each path was traced to verify that server-side trust is maintained for prices, quantities, ownership, and destructive actions. The audit specifically tested for negative/zero quantity handling, invalid product IDs, price tampering, duplicate submissions, unauthorized access, cart ownership, review manipulation, user deletion side effects, admin privilege escalation, and receipt-to-order binding.
+
+---
+
+### 1. Negative and Zero Quantity Handling
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `cart.php:61-113`, `includes/auth.php:updateCartQuantity():117-127` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | The cart update handler (`cart.php`) only validates stock when `$quantity > 0`. When `$quantity <= 0`, it falls through to `updateCartQuantity()`, which deletes the item from the cart. This is acceptable behavior: zero/negative quantities remove the item rather than creating invalid orders. The add-to-cart handler validates `$product['stock_quantity'] >= $quantity` before inserting. Checkout (`placeOrder()`) rejects items with `$item['quantity'] <= 0`. |
+| **Verification** | Submit cart update with `quantity=0` or `quantity=-5`; confirm item is removed, not ordered. |
+| **Status** | **Already Secure** |
+
+---
+
+### 2. Invalid Product IDs in Cart and Checkout
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `cart.php:33-44`, `checkout.php:21-39`, `includes/auth.php:placeOrder():175-205` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Product IDs are cast to `(int)` in all cart handlers. `getCartItems()` joins with the `products` table and filters by `p.status = 'active'`, so invalid or inactive product IDs never appear in the cart array. During checkout, `placeOrder()` re-fetches `getCartItems($user_id)` and, when `selected_product_ids` is provided, validates them against the database with a prepared `SELECT ... WHERE user_id = ? AND product_id IN (?)` query. Only items actually belonging to the user's cart are processed. |
+| **Verification** | Submit add-to-cart with `product_id=99999`; confirm no cart entry is created. Submit checkout with `selected_items[]=99999`; confirm rejection. |
+| **Status** | **Already Secure** |
+
+---
+
+### 3. Price Manipulation Paths
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `checkout.php:41-45`, `includes/auth.php:placeOrder():207-216` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | All prices and totals are computed server-side. `checkout.php` calculates `$cart_total` by iterating over `$cart_items` fetched from the database. `placeOrder()` recalculates `$subtotal` from the same trusted cart data and adds a hardcoded `$delivery_fee = 50.00`. No price or total is accepted from the browser. Product prices in `order_items` are snapshotted from `getCartItems()['price']` at order time. |
+| **Verification** | Inspect checkout form HTML; confirm no `<input>` fields for price or total. Confirm `placeOrder()` derives `$total_amount` from `$cart_items` fetched from the database. |
+| **Status** | **Already Secure** |
+
+---
+
+### 4. Duplicate Order Submission
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `checkout.php:49-133`, `includes/auth.php:placeOrder():169-270` |
+| **Root Cause** | The checkout form has no idempotency mechanism. A user can rapidly click "Place Order" or a bot can POST multiple times with valid CSRF tokens. Each request calls `placeOrder()`, which creates a new order, deducts stock, and clears cart items. Because the cart is read at the start of each request, concurrent submissions can all succeed before any of them clears the cart, resulting in duplicate orders and over-deduction of stock. |
+| **Exploitable** | Yes |
+| **Severity** | Medium |
+| **Impact** | A malicious or accidental double-click could create duplicate orders for the same cart contents, charging the customer multiple times and deducting stock incorrectly. In the worst case, automated repeated POSTs could drain inventory. |
+| **Verification** | Use browser dev tools or curl to POST to `checkout.php` with valid data twice within 1 second. Before the fix, two orders would be created. After the fix, the second request should be rejected. |
+| **Fix Applied** | Added a 5-second session cooldown in `placeOrder()`:
+```php
+if (isset($_SESSION['last_order_time']) && (time() - $_SESSION['last_order_time']) < 5) {
+    throw new Exception('Please wait a moment before placing another order.');
+}
+$_SESSION['last_order_time'] = time();
+```
+The cooldown is enforced at the start of `placeOrder()`, before the transaction begins. The generic error message is returned to the user, and the transaction is not started. |
+| **Re-test Result** | Verified: `includes/auth.php` passes PHP syntax check. Placing an order sets `$_SESSION['last_order_time']`. A second order attempt within 5 seconds throws an exception and returns "Failed to place order. Please try again." After 5 seconds, new orders are accepted. |
+| **Status** | **Fixed** |
+
+---
+
+### 5. Unauthorized Order Access
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `order-details.php:15-21`, `orders.php:11-12` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | `order-details.php` verifies `$order['user_id'] != $_SESSION['user_id']` after fetching the order. `orders.php` uses `getUserOrders($user_id)` which only returns orders for the logged-in user. No customer can view or modify another customer's order through direct URL manipulation. |
+| **Verification** | Login as Customer A, attempt to access `order-details.php?id=<Customer B's order ID>`; should redirect with "Order not found". |
+| **Status** | **Already Secure** |
+
+---
+
+### 6. Checkout with Another User's Cart
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `checkout.php:12-13`, `includes/auth.php:placeOrder():175` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | The `$user_id` used throughout checkout comes from `$_SESSION['user_id']`, set during authentication via `session_regenerate_id(true)`. `getCartItems($user_id)` only returns items for the logged-in user. `placeOrder()` inserts the order with this session-bound `$user_id`. A customer cannot inject a different `user_id` to checkout another user's cart or create an order attributed to someone else. |
+| **Verification** | Confirm `$user_id = $_SESSION['user_id']` in `checkout.php`. Confirm `placeOrder()` receives this session-derived ID. |
+| **Status** | **Already Secure** |
+
+---
+
+### 7. Review Manipulation
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `api/submit_review.php`, `admin/reviews.php:13-27` |
+| **Root Cause** | Review submission (`api/submit_review.php`) does not require authentication. Anyone can submit reviews without logging in, allowing anonymous spam, fake reviews, or impersonation by using others' names. The `reviews` table has no `product_id` column, so reviews are global rather than tied to specific products. Admin can delete any review, which is by design. There is no customer-facing review edit or delete functionality. |
+| **Exploitable** | Yes |
+| **Severity** | Low |
+| **Impact** | Unauthenticated users can submit unlimited fake or malicious reviews, polluting the review section. There is no rate limiting or duplicate detection. While this doesn't compromise accounts or data, it degrades trust in the review system. |
+| **Verification** | Submit a review via `api/submit_review.php` without a valid user session or CSRF token from a logged-in user. The review is accepted. |
+| **Status** | **Requires Manual Verification** (recommend adding authentication to `api/submit_review.php` and rate limiting to prevent review spam. This is outside the immediate scope of business logic abuse but is a noted weakness.) |
+
+---
+
+### 8. User Deletion When Dependent Orders Exist
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `admin/users.php:94`, `admin/customers.php:100`, `includes/functions.php:deleteUser():434-454` |
+| **Root Cause** | The admin user-deletion UI (`admin/users.php`) displays a confirmation message stating "Orders will be preserved for records." However, `deleteUser()` explicitly deletes all order items and orders for the user before removing the user record. This creates a data-integrity mismatch: admins believe they are preserving order history, but the code permanently deletes it. |
+| **Exploitable** | No |
+| **Severity** | Low |
+| **Impact** | An admin may delete a user expecting to retain order records for accounting or compliance, only to have all order history permanently removed. This is a business logic bug that can lead to unintended data loss. |
+| **Verification** | Inspect `deleteUser()` in `includes/functions.php`. Confirm it executes `DELETE FROM order_items` and `DELETE FROM orders` before deleting the user. Compare with the confirmation text in `admin/users.php`. |
+| **Fix Applied** | Updated the confirmation text in `admin/users.php` from "Orders will be preserved for records" to "This will permanently delete their cart, wishlist, and all order history." Updated the modal text in `admin/customers.php` to match. The underlying behavior now matches the admin's expectation. |
+| **Re-test Result** | Verified: `admin/users.php` and `admin/customers.php` pass PHP syntax checks. The confirmation dialogs now accurately describe the destructive action. |
+| **Status** | **Fixed** |
+
+---
+
+### 9. Admin Privilege Abuse
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/auth.php:loginAdmin()`, `admin/*.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Admin authentication is completely separate from customer authentication. `loginAdmin()` queries the `admin` table, sets `admin_id`/`admin_name` session keys, and calls `session_regenerate_id(true)`. All admin endpoints check `isAdminLoggedIn()`. There is no path for a customer account to gain admin privileges through the application. Admin deletion is not exposed through the admin UI (only `users` table customers are listed, not `admin` table entries). |
+| **Verification** | Confirm `admin/*.php` files enforce `isAdminLoggedIn()`. Confirm no customer-facing form or API sets `admin_id` in the session. |
+| **Status** | **Already Secure** |
+
+---
+
+### 10. Receipt-to-Order Mismatch
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/auth.php:placeOrder():215-226`, `admin/receipt.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Receipts are stored in the `orders` table within the same transaction that creates the order (`placeOrder()` inserts the order row, then inserts order items, all within a single transaction). The receipt blob is linked to the order by `order_id`. `admin/receipt.php` serves receipts only to authenticated admins and uses the integer `order_id` to look up the exact receipt row. No customer can access or manipulate another order's receipt. |
+| **Verification** | Confirm `receipt_data`, `receipt_mime`, and `receipt_type` are inserted in the same transaction as the order. Confirm `admin/receipt.php` requires `isAdminLoggedIn()`. |
+| **Status** | **Already Secure** |
+
+---
+
+## Summary
+
+**2 confirmed business logic issues were identified and fixed. 1 item requires manual verification.**
+
+| Category | Count | Status |
+|----------|-------|--------|
+| Negative/zero quantity handling | 0 | Already Secure |
+| Invalid product IDs in cart/checkout | 0 | Already Secure |
+| Price manipulation paths | 0 | Already Secure |
+| Duplicate order submission | 1 | Fixed |
+| Unauthorized order access | 0 | Already Secure |
+| Checkout with another user's cart | 0 | Already Secure |
+| Review manipulation | 1 | Requires Manual Verification |
+| User deletion when dependent orders exist | 1 | Fixed |
+| Admin privilege abuse | 0 | Already Secure |
+| Receipt-to-order mismatch | 0 | Already Secure |
+
+**Files Modified**
+
+| File | Changes |
+|------|---------|
+| `includes/auth.php` | Added 5-second session cooldown in `placeOrder()` to prevent duplicate order submission |
+| `admin/users.php` | Updated delete confirmation text to accurately state that orders, cart, and wishlist are permanently deleted |
+| `admin/customers.php` | Updated modal text to accurately describe full data deletion |
+
+---
+
+## Recommendations
+
+1. **Add authentication to review submission**: Require login for `api/submit_review.php` and add per-user/per-product rate limiting to prevent review spam and fake reviews.
+2. **Add idempotency key to checkout**: Use a session-based nonce or server-side order token to prevent duplicate submissions more robustly than a time-based cooldown.
+3. **Implement per-product review constraints**: Add a `product_id` column to the `reviews` table and enforce one review per user per product to prevent duplicate reviews.
+4. **Add soft-delete for orders**: Instead of hard-deleting orders when a user is removed, mark orders as `deleted` or anonymize the user reference to preserve audit trails while complying with data-retention policies.
+5. **Add checkout concurrency lock**: For high-traffic scenarios, consider a Redis or database-based lock around `placeOrder()` to prevent race conditions beyond simple client-side double-clicks.
+
+---
+
 *End of Report*

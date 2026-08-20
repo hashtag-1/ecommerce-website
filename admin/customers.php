@@ -128,7 +128,7 @@ $users = getAllUsers();
 
         function confirmDeleteUser(id) {
             deleteUserTargetId = id;
-            deleteUserModalText.textContent = 'Are you sure to delete this user?';
+            deleteUserModalText.textContent = 'Are you sure you want to delete this user? This will permanently delete their cart, wishlist, and all order history.';
             deleteUserConfirmBtn.textContent = 'Continue';
             deleteUserConfirmBtn.onclick = showDeleteUserWarning;
             openDeleteUserModal();

@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_user'])) {
                                         <td>
                                             <div class="admin-actions">
                                                 <a href="customer-details.php?id=<?php echo $user['id']; ?>" class="btn btn-primary btn-sm">View</a>
-                                                <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this user? This will delete their cart and wishlist. Orders will be preserved for records.')">
+                                                <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this user? This will delete their cart, wishlist, and all order history permanently.')">
                                                     <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
                                                     <input type="hidden" name="delete" value="<?php echo $user['id']; ?>">
                                                     <button type="submit" name="delete_user" class="btn btn-danger btn-sm">

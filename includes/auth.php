@@ -169,6 +169,11 @@ function clearCart($user_id) {
 function placeOrder($user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $payment_method = 'Cash on Delivery', $receipt_data = null, $receipt_mime = null, $receipt_type = null, $selected_product_ids = null) {
     global $db;
     
+    if (isset($_SESSION['last_order_time']) && (time() - $_SESSION['last_order_time']) < 5) {
+        throw new Exception('Please wait a moment before placing another order.');
+    }
+    $_SESSION['last_order_time'] = time();
+    
     $db->beginTransaction();
     
     try {
