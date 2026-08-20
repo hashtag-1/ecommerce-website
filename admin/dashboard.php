@@ -39,6 +39,7 @@ $recent_activity = getRecentActivity(8);
                 <li><a href="customers.php"><i class="fas fa-users"></i> Customers</a></li>
                 <li><a href="products.php"><i class="fas fa-box"></i> Products</a></li>
                 <li><a href="categories.php"><i class="fas fa-list"></i> Categories</a></li>
+                <li><a href="settings.php"><i class="fas fa-user-cog"></i> Account Settings</a></li>
                 <li><a href="../index.php" target="_blank"><i class="fas fa-external-link-alt"></i> View Site</a></li>
                 <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
