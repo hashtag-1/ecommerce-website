@@ -218,8 +218,23 @@ function removeFromWishlist($user_id, $product_id) {
 
 function getOrderById($id) {
     global $db;
-    $stmt = $db->prepare("SELECT * FROM orders WHERE id = ?");
+    // Exclude the large receipt blob (receipt_data) so the Order Details
+    // response stays lightweight. The receipt is served separately via
+    // admin/receipt.php using the order id as a reference.
+    $stmt = $db->prepare("
+        SELECT id, user_id, order_date, total_amount, delivery_fee, status,
+               payment_method, customer_name, customer_email, customer_phone,
+               customer_address, receipt_mime, receipt_type, created_at, updated_at
+        FROM orders WHERE id = ?
+    ");
     $stmt->execute([$id]);
+    return $stmt->fetch();
+}
+
+function getOrderReceipt($order_id) {
+    global $db;
+    $stmt = $db->prepare("SELECT receipt_data, receipt_mime, receipt_type FROM orders WHERE id = ?");
+    $stmt->execute([$order_id]);
     return $stmt->fetch();
 }
 
