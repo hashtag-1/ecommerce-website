@@ -1118,6 +1118,7 @@ document.addEventListener('DOMContentLoaded', function() {
         cardWidth = getCardWidth();
         gap = getGap();
         track.style.transform = 'translate3d(0, 0, 0)';
+        track.style.transition = 'none';
         lastTime = performance.now();
         animateCarousel(lastTime);
     }
@@ -1133,8 +1134,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const step = (speed * delta) / 16.67;
             currentTranslate -= step;
 
-            if (currentTranslate <= -totalWidth) {
-                currentTranslate = currentTranslate % totalWidth;
+            if (totalWidth > 0 && currentTranslate <= -totalWidth) {
+                currentTranslate += totalWidth;
             }
 
             track.style.transform = 'translate3d(' + currentTranslate + 'px, 0, 0)';
@@ -1203,7 +1204,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!isDragging) return;
             isDragging = false;
             track.classList.remove('dragging');
-            track.style.transition = 'transform 0.1s ease-out';
+            track.style.transition = 'none';
         }
 
         window.addEventListener('mouseup', endDrag);
