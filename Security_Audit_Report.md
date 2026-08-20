@@ -262,27 +262,149 @@ A focused authentication security audit was performed on the Seed2Greens e-comme
 
 ---
 
+## Authorization / Access Control
+
+### 1. IDOR Protection on User Orders
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `order-details.php`, `orders.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | `order-details.php` verifies `$order['user_id'] != $_SESSION['user_id']` before displaying order details. `orders.php` uses `getUserOrders($user_id)`, which filters by the logged-in user's ID. User A cannot access User B's orders by manipulating the `id` parameter. |
+| **Verification** | Login as User A, navigate to `order-details.php?id=<User B's order ID>`; should redirect with "Order not found". |
+| **Status** | **Already Secure** |
+
+---
+
+### 2. IDOR Protection on User Profile
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `profile.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | `profile.php` uses `$_SESSION['user_id']` exclusively for fetching and updating user data. No user-controlled ID parameter is accepted. User A cannot view or modify User B's profile. |
+| **Verification** | Confirm `profile.php` does not accept any `id` parameter from `$_GET` or `$_POST`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 3. IDOR Protection on Cart
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `cart.php`, `includes/auth.php:addToCart()`, `updateCartQuantity()`, `removeFromCart()` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | All cart operations use `$_SESSION['user_id']` as the owner identifier. The SQL queries for update and remove include `user_id = ?` in the WHERE clause, ensuring a user can only affect their own cart items. |
+| **Verification** | Attempt to submit cart forms with a manipulated `user_id` parameter; operations should only affect the session owner's cart. |
+| **Status** | **Already Secure** |
+
+---
+
+### 4. IDOR Protection on Wishlist
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `wishlist.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | `wishlist.php` uses `$_SESSION['user_id']` for all wishlist operations (add, remove, view). No user-controlled ID parameter is accepted. User A cannot access or modify User B's wishlist. |
+| **Verification** | Confirm `wishlist.php` does not accept any `user_id` parameter from `$_GET` or `$_POST`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 5. Admin Page Access Control
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `admin/*.php` (all admin entry points) |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Every admin page (`dashboard.php`, `orders.php`, `products.php`, `customers.php`, `reviews.php`, `settings.php`, etc.) enforces `isAdminLoggedIn()` at the top of the file. A customer with a valid user session cannot access any admin page. Admin and customer sessions use separate keys (`admin_id` vs `user_id`). |
+| **Verification** | Login as a normal customer, then attempt to directly access `admin/dashboard.php`, `admin/orders.php`, `admin/receipt.php`; all should redirect to `admin/login.php`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 6. Admin-Only Endpoints Reachable Without Authentication
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `admin/receipt.php`, `admin/order-details.php`, `admin/customer-details.php`, `admin/users.php`, `admin/customers.php`, `admin/edit-product.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | All sensitive admin endpoints verify `isAdminLoggedIn()` before processing. `admin/receipt.php` returns HTTP 403 if not authenticated. No admin endpoint is accessible without a valid admin session. |
+| **Verification** | Access each admin endpoint without an admin session; verify 403/redirect response. |
+| **Status** | **Already Secure** |
+
+---
+
+### 7. Missing Ownership Check on Sensitive Data Fetch
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | All user-facing data endpoints |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Every endpoint that fetches user-specific sensitive data (orders, profile, cart, wishlist) uses the session's `user_id` as the sole identifier. No endpoint accepts a user-supplied `user_id` or `owner_id` parameter that could be manipulated to reference another user's data. |
+| **Verification** | Grep for `$_GET['user_id']` or `$_POST['user_id']` in user-facing pages; none exist. |
+| **Status** | **Already Secure** |
+
+---
+
+### 8. Vercel API Router Blocking Public API Endpoints
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `api/index.php` |
+| **Root Cause** | The Vercel PHP router's `$blocked` list included `'api/'`, which prevented access to any path starting with `api/`. This blocked legitimate public endpoints `api/submit_review.php` and `api/get_reviews.php` on Vercel deployment. |
+| **Exploitable** | No (this was a functionality denial-of-service, not an access-control bypass) |
+| **Severity** | Medium |
+| **Impact** | Public review API endpoints were inaccessible on Vercel because the router returned 404 for any path under `api/`. Customers could not submit or view reviews via the API on the production deployment. |
+| **Verification** | On Vercel, request `/api/submit_review.php` or `/api/get_reviews.php`; previously returned 404 due to the `api/` block. |
+| **Fix Applied** | Removed `'api/'` from the `$blocked` array in `api/index.php`. The `api/` directory contains public endpoints and should not be blocked. Internal directories (`config/`, `includes/`, `database/`) remain blocked. |
+| **Re-test Result** | Verified: `api/index.php` syntax check passes. The `$blocked` array now contains only `config/`, `includes/`, `database/`. Path traversal protection via `realpath()` remains intact. |
+| **Status** | **Fixed** |
+
+---
+
+### 9. User A Cannot Access User B's Data — Cross-Resource Verification
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | All user resource endpoints |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Explicit verification performed for every user-specific resource: **Orders** (`order-details.php` ownership check), **Profile** (`profile.php` uses session ID), **Cart** (`cart.php` uses session ID), **Wishlist** (`wishlist.php` uses session ID). In all cases, User A cannot read, modify, or delete User B's data through ID manipulation or direct object reference. |
+| **Verification** | Code review of all user data access patterns confirms session-bound ownership. |
+| **Status** | **Already Secure** |
+
+---
+
 ## Files Modified
 
 | File | Changes |
 |------|---------|
-| `includes/functions.php` | Added `session_set_cookie_params()` with Secure/HttpOnly/SameSite; added `checkLoginRateLimit()`, `recordLoginAttempt()`, `clearLoginAttempts()`, `validatePasswordStrength()` |
-| `includes/auth.php` | Added `session_regenerate_id(true)` after login; replaced `unset()` with full session destruction on logout; integrated rate limiting |
-| `login.php` | Added CSRF token generation/validation; integrated rate limit checks |
-| `register.php` | Replaced specific duplicate-email error with generic message; replaced 6-char minimum with `validatePasswordStrength()` |
-| `profile.php` | Replaced 6-char password check with `validatePasswordStrength()` |
-| `admin/settings.php` | Replaced 6-char password check with `validatePasswordStrength()` |
-| `config/database.php` | Suppressed raw PDO error messages from user output; logged to server-side error log |
+| `api/index.php` | Removed `'api/'` from the `$blocked` router block list to allow public API endpoints (`api/submit_review.php`, `api/get_reviews.php`) on Vercel |
 
 ---
 
 ## Recommendations
 
-1. **Deploy IP-based rate limiting** at the infrastructure level (Vercel Edge Middleware or Aiven proxy) to supplement session-based limits.
-2. **Configure `session.gc_maxlifetime`** explicitly to enforce session expiration (e.g., 2 hours of inactivity).
-3. **Enable HSTS** via Vercel configuration headers to enforce HTTPS.
-4. **Consider implementing account lockout** (not just rate limiting) for admin accounts after repeated failures.
-5. **Add password confirmation** on the customer profile page for username changes if that feature is added in the future.
+1. **Consider IP-based rate limiting** at the infrastructure level for both user and admin login endpoints to supplement session-based limits.
+2. **Enforce POST for all destructive admin actions** (e.g., user deletion) instead of GET, even with CSRF protection, to align with RESTful best practices and prevent caching/prefetch side effects.
+3. **Add authorization tests** to the CI pipeline that verify a user cannot access another user's orders, profile, cart, or wishlist by changing resource IDs.
 
 ---
 

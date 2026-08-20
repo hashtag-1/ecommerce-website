@@ -18,7 +18,6 @@ $blocked = [
     'config/',
     'includes/',
     'database/',
-    'api/',
 ];
 
 foreach ($blocked as $folder) {
