@@ -71,19 +71,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_cart'])) {
     
     $product_id = (int)$_POST['product_id'];
     $quantity = (int)$_POST['quantity'];
+    
+    if ($quantity > 0) {
+        $product = getProductById($product_id);
+        if (!$product || $quantity > $product['stock_quantity']) {
+            $message = 'Insufficient stock available';
+            $success = false;
+            
+            if ($is_ajax) {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'success' => false,
+                    'message' => $message,
+                    'cart_count' => getCartCount($user_id),
+                    'cart_total' => getCartTotal($user_id)
+                ]);
+                exit();
+            }
+            
+            setFlashMessage($message, 'error');
+            redirect('cart.php');
+        }
+    }
+    
     updateCartQuantity($user_id, $product_id, $quantity);
+    $message = 'Cart updated';
+    $success = true;
     
     if ($is_ajax) {
         header('Content-Type: application/json');
         echo json_encode([
-            'success' => true,
+            'success' => $success,
+            'message' => $message,
             'cart_count' => getCartCount($user_id),
             'cart_total' => getCartTotal($user_id)
         ]);
         exit();
     }
     
-    setFlashMessage('Cart updated', 'success');
+    setFlashMessage($message, $success ? 'success' : 'error');
     redirect('cart.php');
 }
 

@@ -111,6 +111,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
                         }
                     }
                 }
+            } else {
+                $error = 'Please upload a payment receipt for ' . $payment_method;
             }
         }
         

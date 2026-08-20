@@ -206,6 +206,9 @@ function placeOrder($user_id, $customer_name, $customer_email, $customer_phone, 
         
         $subtotal = 0;
         foreach ($cart_items as $item) {
+            if ($item['quantity'] <= 0) {
+                throw new Exception('Invalid cart item quantity');
+            }
             $subtotal += $item['subtotal'];
         }
         
@@ -228,16 +231,26 @@ function placeOrder($user_id, $customer_name, $customer_email, $customer_phone, 
         $order_id = $db->lastInsertId();
         
         foreach ($cart_items as $item) {
+            $stmt = $db->prepare("SELECT stock_quantity FROM products WHERE id = ?");
+            $stmt->execute([$item['product_id']]);
+            $stock = $stmt->fetchColumn();
+            if ($stock === false || $item['quantity'] > $stock) {
+                throw new Exception('Insufficient stock for: ' . $item['name']);
+            }
+            
+            $stmt = $db->prepare("
+                UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ? AND stock_quantity >= ?
+            ");
+            $stmt->execute([$item['quantity'], $item['product_id'], $item['quantity']]);
+            if ($stmt->rowCount() == 0) {
+                throw new Exception('Insufficient stock for: ' . $item['name']);
+            }
+            
             $stmt = $db->prepare("
                 INSERT INTO order_items (order_id, product_id, quantity, price)
                 VALUES (?, ?, ?, ?)
             ");
             $stmt->execute([$order_id, $item['product_id'], $item['quantity'], $item['price']]);
-            
-            $stmt = $db->prepare("
-                UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?
-            ");
-            $stmt->execute([$item['quantity'], $item['product_id']]);
         }
         
         if ($valid_product_ids !== null && !empty($valid_product_ids)) {

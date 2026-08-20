@@ -1991,4 +1991,180 @@ CSRF tokens are no longer exposed in URLs. |
 
 ---
 
+## Payment/Checkout Security
+
+### Methodology
+
+The checkout/order-creation code path was inspected end-to-end, from cart manipulation through order placement, payment validation, stock deduction, and receipt handling. Every user-supplied value (price, total, user ID, product ID, quantity, payment method, receipt) was traced to verify server-side trust. The audit specifically tested whether a malicious user could manipulate client-side data to affect pricing, ownership, quantity, or payment validation.
+
+---
+
+### 1. Server-Side Price and Total Calculation
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `checkout.php:41-45`, `includes/auth.php:placeOrder():207-213` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | The order subtotal and grand total are calculated entirely server-side from the cart items retrieved via `getCartItems($user_id)`. `getCartItems()` performs a JOIN with the `products` table and computes `subtotal` as `c.quantity * p.price`, using the current database price — not any client-supplied value. `placeOrder()` recalculates the subtotal and adds a hardcoded delivery fee of `50.00`. No price or total is accepted from the browser. |
+| **Verification** | Inspect checkout form HTML; confirm no `<input>` fields for price or total. Confirm `placeOrder()` derives `$total_amount` from `$cart_items` fetched from the database. |
+| **Status** | **Already Secure** |
+
+---
+
+### 2. User ID Cannot Be Manipulated to Checkout Another User's Cart
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `checkout.php:12-13`, `includes/auth.php:placeOrder():175` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | The `$user_id` used throughout checkout comes from `$_SESSION['user_id']`, set during authentication via `session_regenerate_id(true)`. `getCartItems($user_id)` only returns items for the logged-in user. `placeOrder()` inserts the order with this session-bound `$user_id`. A customer cannot inject a different `user_id` to checkout another user's cart or create an order attributed to someone else. |
+| **Verification** | Confirm `$user_id = $_SESSION['user_id']` in `checkout.php`. Confirm `placeOrder()` receives this session-derived ID. Confirm `getCartItems()` filters by `user_id`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 3. Order Ownership Enforcement (IDOR Protection)
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `order-details.php:15-21`, `orders.php:12` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | `order-details.php` verifies `$order['user_id'] != $_SESSION['user_id']` before displaying order details. `orders.php` uses `getUserOrders($user_id)` which only returns orders for the logged-in user. No customer can view or modify another customer's order through direct URL manipulation. |
+| **Verification** | Login as Customer A, attempt to access `order-details.php?id=<Customer B's order ID>`; should redirect with "Order not found". |
+| **Status** | **Already Secure** |
+
+---
+
+### 4. No Customer-Facing Order Modification Endpoints
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `orders.php`, `order-details.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Customer order pages (`orders.php`, `order-details.php`) are read-only. There are no POST handlers for updating order status, totals, items, or shipping details. Order modification is restricted to authenticated admin endpoints (`admin/order-details.php`) which enforce `isAdminLoggedIn()` and validate status changes against allowed values. |
+| **Verification** | Inspect `orders.php` and `order-details.php` for `$_POST` handlers; none exist for customer order modification. |
+| **Status** | **Already Secure** |
+
+---
+
+### 5. Stock Validation Gap at Checkout
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `cart.php:61-74`, `includes/auth.php:placeOrder():230-241` |
+| **Root Cause** | Stock is validated when adding items to cart (`cart.php:36-37`), but the cart quantity update handler (`cart.php:61-74`) does not validate the new quantity against available stock. More critically, `placeOrder()` deducts stock without checking if the cart quantity exceeds current stock. A malicious user could bypass the client-side `max` attribute and set an arbitrarily large quantity via a crafted POST request to `cart.php`. |
+| **Exploitable** | Yes |
+| **Severity** | Critical |
+| **Impact** | A user can manipulate their cart quantity to exceed available stock. During checkout, `placeOrder()` would create the order and deduct the excessive quantity from stock, resulting in negative `stock_quantity` values in the `products` table. This allows purchasing items that are not actually available, potentially overselling products and causing inventory corruption. |
+| **Verification** | Add a product with stock=5 to cart. Use browser dev tools or curl to POST to `cart.php` with `update_cart=1`, `product_id=<id>`, `quantity=999999`. Proceed to checkout. Observe order creation with total based on 999999 units and stock becoming massively negative. |
+| **Fix Applied** | 1. Added stock validation in `cart.php` update handler: server now checks `getProductById()` and rejects quantities exceeding `stock_quantity` before calling `updateCartQuantity()`. 2. Added stock validation and atomic stock deduction in `placeOrder()`: before inserting order items, the function queries current stock and throws an exception if any cart item quantity exceeds it. The stock UPDATE now uses `WHERE stock_quantity >= ?` and checks `rowCount()`, ensuring atomic deduction and preventing race conditions from corrupting inventory. |
+| **Re-test Result** | Verified: All 3 modified files pass PHP syntax checks. Attempting to update cart quantity above stock returns "Insufficient stock available" error. Attempting to checkout with manipulated cart quantity triggers rollback with "Insufficient stock" error. |
+| **Status** | **Fixed** |
+
+---
+
+### 6. Payment Receipt Bypass for Digital Payment Methods
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `checkout.php:70-115` |
+| **Root Cause** | For eSewa and Khalti payment methods, the code only processes the receipt file if one is uploaded. If no file is provided, the block is silently skipped and the order is created with `receipt_data = null`. There is no server-side enforcement that a receipt is mandatory for digital payment methods. |
+| **Exploitable** | Yes |
+| **Severity** | High |
+| **Impact** | A malicious user can select eSewa or Khalti as the payment method, skip the receipt upload entirely (by simply not including the file in the POST request), and still successfully place the order. This allows fraudulent orders claiming digital payment without any proof of transaction. Stock would still be deducted, and the admin would see no receipt to verify. |
+| **Verification** | Submit checkout form with `payment_method=eSewa` but omit the `receipt_file`. Observe order creation succeeds with no receipt stored. |
+| **Fix Applied** | Added an `else` clause in `checkout.php` for the eSewa/Khalti receipt block: if no receipt file is uploaded, `$error` is set to "Please upload a payment receipt for eSewa/Khalti", preventing order creation. |
+| **Re-test Result** | Verified: `checkout.php` passes PHP syntax check. Attempting to checkout with eSewa/Khalti without uploading a receipt now displays the error and does not call `placeOrder()`. |
+| **Status** | **Fixed** |
+
+---
+
+### 7. Product ID and Receipt Association Integrity
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/auth.php:placeOrder():230-241`, `admin/receipt.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Order items are created by iterating over the server-fetched `$cart_items` array (joined with `products`), ensuring each `product_id` is valid and active. The receipt is stored with the `order_id` in the `orders` table. The `admin/receipt.php` endpoint serves receipts only to authenticated admins and uses the integer `order_id` to look up the receipt. No customer can access or manipulate another order's receipt. |
+| **Verification** | Confirm order items are derived from `getCartItems()` JOIN, not from client input. Confirm `admin/receipt.php` enforces `isAdminLoggedIn()`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 8. Quantity Manipulation via Cart Update
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `cart.php:61-74` |
+| **Root Cause** | The cart quantity update handler accepted any integer quantity from the browser without server-side validation against available stock. While the UI enforces `min="1"` and `max="<stock>"` via HTML attributes, these can be bypassed with crafted POST requests. |
+| **Exploitable** | Yes |
+| **Severity** | Medium |
+| **Impact** | A user could POST an excessive quantity to `cart.php?update_cart=1`, bypassing the client-side stock limit. While zero/negative quantities simply remove the item, large positive quantities could inflate the cart subtotal and, if combined with the stock validation gap at checkout (now fixed), could lead to overselling. |
+| **Verification** | Use browser dev tools or curl to POST to `cart.php` with `update_cart=1`, `product_id=<id>`, `quantity=999999`. Observe the cart accepts the value without error. |
+| **Fix Applied** | Added server-side stock validation in `cart.php` update handler: before calling `updateCartQuantity()`, the code fetches the product via `getProductById()` and rejects the update if `quantity > stock_quantity`. AJAX and form responses both return "Insufficient stock available" without modifying the cart. |
+| **Re-test Result** | Verified: `cart.php` passes PHP syntax check. Attempting to update quantity above available stock returns error and cart remains unchanged. |
+| **Status** | **Fixed** |
+
+---
+
+### 9. Customer Delivery Information Spoofing
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `checkout.php:53-57` |
+| **Root Cause** | N/A |
+| **Exploitable** | No (by design) |
+| **Severity** | Informational |
+| **Impact** | Customer name, email, phone, and address are collected from the checkout form rather than pulled from the user's profile. This is standard e-commerce behavior, allowing customers to specify alternative delivery details. The values are sanitized with `htmlspecialchars()` on output. The order is still tied to the authenticated user via `$_SESSION['user_id']`, so the account owner is always known. |
+| **Verification** | Confirm customer fields in checkout form are POSTed values, not pre-filled profile-only data. Confirm output sanitization in `order-details.php` and admin views. |
+| **Status** | **Already Secure** |
+
+---
+
+## Summary
+
+**3 confirmed payment/checkout issues were identified and fixed.**
+
+| Category | Count | Status |
+|----------|-------|--------|
+| Stock validation gap at checkout | 1 | Fixed |
+| Payment receipt bypass for eSewa/Khalti | 1 | Fixed |
+| Quantity manipulation via cart update | 1 | Fixed |
+| Server-side price/total calculation | 0 | Already Secure |
+| User ID / cart ownership | 0 | Already Secure |
+| Order IDOR protection | 0 | Already Secure |
+| No customer order modification | 0 | Already Secure |
+| Product/receipt association integrity | 0 | Already Secure |
+| Customer delivery info spoofing | 0 | Already Secure |
+
+**Files Modified**
+
+| File | Changes |
+|------|---------|
+| `includes/auth.php` | Added stock validation and atomic stock deduction in `placeOrder()` |
+| `checkout.php` | Enforced mandatory receipt upload for eSewa/Khalti payment methods |
+| `cart.php` | Added server-side stock validation for cart quantity updates |
+
+---
+
+## Recommendations
+
+1. **Implement inventory holds at cart level**: Consider reserving stock when items are added to cart (with TTL) to prevent stock depletion between cart add and checkout.
+2. **Add webhook verification for digital payments**: For eSewa/Khalti, implement server-side payment verification via provider webhooks instead of relying solely on manual receipt review.
+3. **Add checkout rate limiting**: Limit the number of order placement attempts per user/IP to prevent automated abuse.
+4. **Validate product status at checkout**: In `getCartItems()`, also check `stock_quantity > 0` to hide out-of-stock items from the cart summary.
+5. **Implement order total tamper detection**: Store a hash of the order items/total at session start and verify it at checkout to detect any mid-session manipulation.
+
+---
+
 *End of Report*
