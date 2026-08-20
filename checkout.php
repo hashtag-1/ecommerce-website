@@ -70,24 +70,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
         if ($payment_method === 'eSewa' || $payment_method === 'Khalti') {
             if (isset($_FILES['receipt_file']) && $_FILES['receipt_file']['error'] === UPLOAD_ERR_OK) {
                 $file = $_FILES['receipt_file'];
-                $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+                $allowed_types = ['image/jpeg', 'image/png', 'application/pdf'];
+                $allowed_extensions = ['jpg', 'jpeg', 'png', 'pdf'];
                 $max_size = 5 * 1024 * 1024;
                 
-                $finfo = new finfo(FILEINFO_MIME_TYPE);
-                $mime_type = $finfo->file($file['tmp_name']);
+                $original_name = $file['name'];
+                $extension = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
                 
-                if (!in_array($mime_type, $allowed_types)) {
+                if (!in_array($extension, $allowed_extensions)) {
                     $error = 'Invalid file type. Only JPG, PNG, and PDF are allowed.';
-                } elseif ($file['size'] > $max_size) {
-                    $error = 'File size exceeds 5MB limit.';
                 } else {
-                    $content = file_get_contents($file['tmp_name']);
-                    if ($content === false) {
-                        $error = 'Failed to read uploaded file.';
+                    $finfo = new finfo(FILEINFO_MIME_TYPE);
+                    $mime_type = $finfo->file($file['tmp_name']);
+                    
+                    if (!in_array($mime_type, $allowed_types)) {
+                        $error = 'Invalid file type. Only JPG, PNG, and PDF are allowed.';
+                    } elseif (filesize($file['tmp_name']) > $max_size) {
+                        $error = 'File size exceeds 5MB limit.';
                     } else {
-                        $receipt_mime = $mime_type;
-                        $receipt_type = ($mime_type === 'application/pdf') ? 'pdf' : 'image';
-                        $receipt_data = base64_encode($content);
+                        $content = file_get_contents($file['tmp_name']);
+                        if ($content === false) {
+                            $error = 'Failed to read uploaded file.';
+                        } else {
+                            if ($mime_type === 'application/pdf') {
+                                if (strpos($content, '%PDF-') !== 0) {
+                                    $error = 'Invalid PDF file.';
+                                }
+                            } else {
+                                $image_info = getimagesizefromstring($content);
+                                if ($image_info === false) {
+                                    $error = 'Invalid image file.';
+                                }
+                            }
+                            
+                            if (empty($error)) {
+                                $receipt_mime = $mime_type;
+                                $receipt_type = ($mime_type === 'application/pdf') ? 'pdf' : 'image';
+                                $receipt_data = base64_encode($content);
+                            }
+                        }
                     }
                 }
             }
