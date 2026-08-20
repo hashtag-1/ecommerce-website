@@ -165,9 +165,13 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateCartTotals() {
         let subtotal = 0;
         quantityInputsCart.forEach(function(input) {
-            const price = parseFloat(input.getAttribute('data-price')) || 0;
-            const qty = parseInt(input.value) || 0;
-            subtotal += price * qty;
+            const row = input.closest('tr');
+            const checkbox = row ? row.querySelector('.cart-item-checkbox') : null;
+            if (checkbox && checkbox.checked) {
+                const price = parseFloat(input.getAttribute('data-price')) || 0;
+                const qty = parseInt(input.value) || 0;
+                subtotal += price * qty;
+            }
         });
         const deliveryFee = subtotal > 0 ? 50 : 0;
         const total = subtotal + deliveryFee;
@@ -259,12 +263,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const checkedCount = Array.from(itemCheckboxes).filter(function(cb) { return cb.checked; }).length;
             selectAllCheckbox.checked = checkedCount === itemCheckboxes.length;
             selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < itemCheckboxes.length;
+            updateCartTotals();
         }
         
         selectAllCheckbox.addEventListener('change', function() {
             itemCheckboxes.forEach(function(cb) {
                 cb.checked = selectAllCheckbox.checked;
             });
+            updateCartTotals();
         });
         
         itemCheckboxes.forEach(function(cb) {
