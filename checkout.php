@@ -96,8 +96,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
                             <label for="payment_method">Select Payment Method</label>
                             <select id="payment_method" name="payment_method" required>
                                 <option value="Cash on Delivery" <?php echo (!isset($_POST['payment_method']) || $_POST['payment_method'] == 'Cash on Delivery') ? 'selected' : ''; ?>>Cash on Delivery</option>
-                                <option value="eSewa" <?php echo (isset($_POST['payment_method']) && $_POST['payment_method'] == 'eSewa') ? 'selected' : ''; ?>>eSewa (Coming Soon)</option>
-                                <option value="Khalti" <?php echo (isset($_POST['payment_method']) && $_POST['payment_method'] == 'Khalti') ? 'selected' : ''; ?>>Khalti (Coming Soon)</option>
+                                <option value="eSewa" <?php echo (isset($_POST['payment_method']) && $_POST['payment_method'] == 'eSewa') ? 'selected' : ''; ?>>eSewa</option>
+                                <option value="Khalti" <?php echo (isset($_POST['payment_method']) && $_POST['payment_method'] == 'Khalti') ? 'selected' : ''; ?>>Khalti</option>
                             </select>
                             
                             <div id="payment-qr-container" style="margin-top: 15px; display: none;">
