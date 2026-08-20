@@ -37,12 +37,51 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
     } elseif (!validatePhone($customer_phone)) {
         $error = 'Please enter a valid 10-digit phone number';
     } else {
-        $order_id = placeOrder($user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $payment_method);
-        if ($order_id) {
-            setFlashMessage('Order placed successfully! Order ID: ORD' . date('Ymd') . str_pad($order_id, 4, '0', STR_PAD_LEFT), 'success');
-            redirect('orders.php');
-        } else {
-            $error = 'Failed to place order. Please try again.';
+        $receipt_path = null;
+        $receipt_type = null;
+        
+        if ($payment_method === 'eSewa' || $payment_method === 'Khalti') {
+            if (isset($_FILES['receipt_file']) && $_FILES['receipt_file']['error'] === UPLOAD_ERR_OK) {
+                $file = $_FILES['receipt_file'];
+                $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+                $max_size = 5 * 1024 * 1024;
+                
+                $finfo = new finfo(FILEINFO_MIME_TYPE);
+                $mime_type = $finfo->file($file['tmp_name']);
+                
+                if (!in_array($mime_type, $allowed_types)) {
+                    $error = 'Invalid file type. Only JPG, PNG, and PDF are allowed.';
+                } elseif ($file['size'] > $max_size) {
+                    $error = 'File size exceeds 5MB limit.';
+                } else {
+                    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+                    $filename = uniqid('receipt_', true) . '.' . $ext;
+                    $upload_dir = __DIR__ . '/uploads/receipts/';
+                    
+                    if (!is_dir($upload_dir)) {
+                        mkdir($upload_dir, 0755, true);
+                    }
+                    
+                    $destination = $upload_dir . $filename;
+                    
+                    if (move_uploaded_file($file['tmp_name'], $destination)) {
+                        $receipt_path = 'uploads/receipts/' . $filename;
+                        $receipt_type = ($mime_type === 'application/pdf') ? 'pdf' : 'image';
+                    } else {
+                        $error = 'Failed to upload receipt. Please try again.';
+                    }
+                }
+            }
+        }
+        
+        if (empty($error)) {
+            $order_id = placeOrder($user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $payment_method, $receipt_path, $receipt_type);
+            if ($order_id) {
+                setFlashMessage('Order placed successfully! Order ID: ORD' . date('Ymd') . str_pad($order_id, 4, '0', STR_PAD_LEFT), 'success');
+                redirect('orders.php');
+            } else {
+                $error = 'Failed to place order. Please try again.';
+            }
         }
     }
 }
@@ -60,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
             </div>
         <?php endif; ?>
         
-        <form method="POST" action="">
+        <form method="POST" action="" enctype="multipart/form-data">
             <div class="checkout-grid">
                 <div>
                     <!-- Customer Information -->
@@ -101,11 +140,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
                             </select>
                             
                             <div id="payment-qr-container" style="margin-top: 15px; display: none;">
-                                <img id="esewa-qr" src="img/esewa.png" alt="eSewa QR" style="display: none; max-width: 200px; height: auto; border-radius: var(--radius); border: 1px solid var(--border);">
-                                <img id="khalti-qr" src="img/khalti.png" alt="Khalti QR" style="display: none; max-width: 200px; height: auto; border-radius: var(--radius); border: 1px solid var(--border);">
+                                <img id="esewa-qr" src="img/esewa.png" alt="eSewa QR" style="display: none; max-width: 200px; height: auto; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer;">
+                                <img id="khalti-qr" src="img/khalti.png" alt="Khalti QR" style="display: none; max-width: 200px; height: auto; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer;">
+                                
+                                <div id="receipt-upload-container" style="margin-top: 15px; display: none;">
+                                    <label for="receipt_file" style="display: block; margin-bottom: 5px; font-weight: 500;">Upload Receipt (JPG, PNG, PDF)</label>
+                                    <input type="file" id="receipt_file" name="receipt_file" accept=".jpg,.jpeg,.png,.pdf" style="padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); width: 100%;">
+                                    <small style="color: var(--text-light);">Max size: 5MB. Accepted: JPG, JPEG, PNG, PDF</small>
+                                </div>
                             </div>
-                            
-                            <small style="color: var(--text-light);">Only Cash on Delivery is active currently</small>
                         </div>
                     </div>
                 </div>
@@ -154,6 +197,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
                 </div>
             </div>
         </form>
+        
+        <div id="qr-lightbox" style="display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.92); align-items: center; justify-content: center; flex-direction: column; padding: 20px;">
+            <img id="qr-lightbox-img" src="" alt="Payment QR" style="max-width: 90vw; max-height: 70vh; width: auto; height: auto; object-fit: contain; border-radius: 8px;">
+            <div style="margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+                <button type="button" id="qr-lightbox-download" style="padding: 12px 24px; border: none; border-radius: 8px; background: var(--primary); color: #fff; font-size: 16px; font-weight: 600; cursor: pointer;">Download QR</button>
+                <button type="button" id="qr-lightbox-close" style="padding: 12px 24px; border: none; border-radius: 8px; background: rgba(255,255,255,0.15); color: #fff; font-size: 16px; font-weight: 600; cursor: pointer;">Close</button>
+            </div>
+        </div>
     </div>
 </div>
 

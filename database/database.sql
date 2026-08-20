@@ -108,6 +108,8 @@ CREATE TABLE orders (
     customer_email VARCHAR(100) NOT NULL,
     customer_phone VARCHAR(20) NOT NULL,
     customer_address TEXT NOT NULL,
+    receipt_path VARCHAR(255) DEFAULT NULL,
+    receipt_type ENUM('image', 'pdf') DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,

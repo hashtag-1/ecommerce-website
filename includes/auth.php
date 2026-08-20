@@ -136,13 +136,12 @@ function clearCart($user_id) {
 // Order Functions
 // ============================================
 
-function placeOrder($user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $payment_method = 'Cash on Delivery') {
+function placeOrder($user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $payment_method = 'Cash on Delivery', $receipt_path = null, $receipt_type = null) {
     global $db;
     
     $db->beginTransaction();
     
     try {
-        // Calculate totals
         $cart_items = getCartItems($user_id);
         if (empty($cart_items)) {
             throw new Exception('Cart is empty');
@@ -153,18 +152,16 @@ function placeOrder($user_id, $customer_name, $customer_email, $customer_phone, 
             $subtotal += $item['subtotal'];
         }
         
-        $delivery_fee = 50.00; // Fixed delivery fee
+        $delivery_fee = 50.00;
         $total_amount = $subtotal + $delivery_fee;
         
-        // Create order
         $stmt = $db->prepare("
-            INSERT INTO orders (user_id, customer_name, customer_email, customer_phone, customer_address, total_amount, delivery_fee, payment_method)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO orders (user_id, customer_name, customer_email, customer_phone, customer_address, total_amount, delivery_fee, payment_method, receipt_path, receipt_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
-        $stmt->execute([$user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $total_amount, $delivery_fee, $payment_method]);
+        $stmt->execute([$user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $total_amount, $delivery_fee, $payment_method, $receipt_path, $receipt_type]);
         $order_id = $db->lastInsertId();
         
-        // Insert order items
         foreach ($cart_items as $item) {
             $stmt = $db->prepare("
                 INSERT INTO order_items (order_id, product_id, quantity, price)
@@ -172,14 +169,12 @@ function placeOrder($user_id, $customer_name, $customer_email, $customer_phone, 
             ");
             $stmt->execute([$order_id, $item['product_id'], $item['quantity'], $item['price']]);
             
-            // Update product stock
             $stmt = $db->prepare("
                 UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?
             ");
             $stmt->execute([$item['quantity'], $item['product_id']]);
         }
         
-        // Clear cart
         clearCart($user_id);
         
         $db->commit();

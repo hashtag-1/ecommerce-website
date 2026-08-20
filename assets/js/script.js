@@ -257,6 +257,33 @@ document.addEventListener('DOMContentLoaded', function() {
     const qrContainer = document.getElementById('payment-qr-container');
     const esewaQr = document.getElementById('esewa-qr');
     const khaltiQr = document.getElementById('khalti-qr');
+    const receiptUploadContainer = document.getElementById('receipt-upload-container');
+    const qrLightbox = document.getElementById('qr-lightbox');
+    const qrLightboxImg = document.getElementById('qr-lightbox-img');
+    const qrLightboxDownload = document.getElementById('qr-lightbox-download');
+    const qrLightboxClose = document.getElementById('qr-lightbox-close');
+    
+    function openQrLightbox(src) {
+        if (!qrLightbox || !qrLightboxImg) return;
+        qrLightboxImg.src = src;
+        qrLightbox.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeQrLightbox() {
+        if (!qrLightbox) return;
+        qrLightbox.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    
+    function downloadQr(src) {
+        const a = document.createElement('a');
+        a.href = src;
+        a.download = src.split('/').pop();
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
     
     function updatePaymentQr() {
         if (!paymentMethodSelect || !qrContainer || !esewaQr || !khaltiQr) return;
@@ -267,20 +294,65 @@ document.addEventListener('DOMContentLoaded', function() {
             qrContainer.style.display = 'block';
             esewaQr.style.display = 'block';
             khaltiQr.style.display = 'none';
+            if (receiptUploadContainer) receiptUploadContainer.style.display = 'block';
         } else if (method === 'Khalti') {
             qrContainer.style.display = 'block';
             esewaQr.style.display = 'none';
             khaltiQr.style.display = 'block';
+            if (receiptUploadContainer) receiptUploadContainer.style.display = 'block';
         } else {
             qrContainer.style.display = 'none';
             esewaQr.style.display = 'none';
             khaltiQr.style.display = 'none';
+            if (receiptUploadContainer) {
+                receiptUploadContainer.style.display = 'none';
+                const fileInput = receiptUploadContainer.querySelector('input[type="file"]');
+                if (fileInput) fileInput.value = '';
+            }
         }
     }
     
     if (paymentMethodSelect) {
         paymentMethodSelect.addEventListener('change', updatePaymentQr);
         updatePaymentQr();
+    }
+    
+    if (esewaQr) {
+        esewaQr.addEventListener('click', function() {
+            openQrLightbox('img/esewa.png');
+        });
+    }
+    
+    if (khaltiQr) {
+        khaltiQr.addEventListener('click', function() {
+            openQrLightbox('img/khalti.png');
+        });
+    }
+    
+    if (qrLightboxClose) {
+        qrLightboxClose.addEventListener('click', closeQrLightbox);
+    }
+    
+    if (qrLightboxDownload) {
+        qrLightboxDownload.addEventListener('click', function() {
+            if (qrLightboxImg && qrLightboxImg.src) {
+                downloadQr(qrLightboxImg.src);
+            }
+        });
+    }
+    
+    if (qrLightbox) {
+        qrLightbox.addEventListener('click', function(e) {
+            if (e.target === qrLightbox) {
+                closeQrLightbox();
+            }
+        });
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && qrLightbox.style.display === 'flex') {
+                closeQrLightbox();
+            }
+        });
     }
     
     // === Smooth scroll for anchor links ===

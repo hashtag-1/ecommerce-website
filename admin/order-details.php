@@ -94,28 +94,55 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_status'])) {
                 <?php endif; ?>
                 
                 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
-                    <div class="admin-card">
-                        <h3 style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--primary);">Order Items</h3>
-                        <table class="data-table" style="box-shadow: none;">
-                            <thead>
-                                <tr>
-                                    <th>Product</th>
-                                    <th>Qty</th>
-                                    <th>Price</th>
-                                    <th>Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($order_items as $item): ?>
+                    <div>
+                        <div class="admin-card">
+                            <h3 style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--primary);">Order Items</h3>
+                            <table class="data-table" style="box-shadow: none;">
+                                <thead>
                                     <tr>
-                                        <td><?php echo sanitize($item['product_name']); ?></td>
-                                        <td><?php echo $item['quantity']; ?></td>
-                                        <td><?php echo formatAdminCurrency($item['price']); ?></td>
-                                        <td><?php echo formatAdminCurrency($item['quantity'] * $item['price']); ?></td>
+                                        <th>Product</th>
+                                        <th>Qty</th>
+                                        <th>Price</th>
+                                        <th>Subtotal</th>
                                     </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($order_items as $item): ?>
+                                        <tr>
+                                            <td><?php echo sanitize($item['product_name']); ?></td>
+                                            <td><?php echo $item['quantity']; ?></td>
+                                            <td><?php echo formatAdminCurrency($item['price']); ?></td>
+                                            <td><?php echo formatAdminCurrency($item['quantity'] * $item['price']); ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="admin-card">
+                            <h3 style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--primary);">Payment Details</h3>
+                            <div class="admin-info-row"><span class="label">Payment Method:</span><span class="value"><?php echo sanitize($order['payment_method']); ?></span></div>
+                            <?php if ($order['payment_method'] === 'eSewa' || $order['payment_method'] === 'Khalti'): ?>
+                                <?php if (!empty($order['receipt_path'])): ?>
+                                    <div class="admin-info-row">
+                                        <span class="label">Receipt:</span>
+                                        <span class="value">
+                                            <?php if ($order['receipt_type'] === 'pdf'): ?>
+                                                <a href="../<?php echo sanitize($order['receipt_path']); ?>" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none;">
+                                                    <i class="fas fa-file-pdf"></i> View PDF Receipt
+                                                </a>
+                                            <?php else: ?>
+                                                <img src="../<?php echo sanitize($order['receipt_path']); ?>" alt="Payment Receipt" style="max-width: 200px; height: auto; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer;" onclick="window.open('../<?php echo sanitize($order['receipt_path']); ?>', '_blank')">
+                                            <?php endif; ?>
+                                        </span>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="flash-message flash-warning" style="border-radius: 8px; margin-top: 10px; padding: 12px;">
+                                        <i class="fas fa-exclamation-triangle"></i> Payment Not confirmed
+                                    </div>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
                     
                     <div>
