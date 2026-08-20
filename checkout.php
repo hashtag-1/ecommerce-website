@@ -56,12 +56,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
     $customer_address = sanitize($_POST['customer_address']);
     $payment_method = sanitize($_POST['payment_method']);
     
+    $allowed_payment_methods = ['Cash on Delivery', 'eSewa', 'Khalti'];
+    
     if (empty($customer_name) || empty($customer_email) || empty($customer_phone) || empty($customer_address)) {
         $error = 'Please fill in all fields';
     } elseif (!validateEmail($customer_email)) {
         $error = 'Please enter a valid email address';
     } elseif (!validatePhone($customer_phone)) {
         $error = 'Please enter a valid 10-digit phone number';
+    } elseif (!in_array($payment_method, $allowed_payment_methods, true)) {
+        $error = 'Invalid payment method selected';
     } else {
         $receipt_data = null;
         $receipt_mime = null;

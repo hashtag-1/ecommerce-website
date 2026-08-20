@@ -6,7 +6,7 @@ header('Content-Type: application/json');
 
 $search_term = isset($_GET['q']) ? sanitize($_GET['q']) : '';
 
-if (strlen($search_term) < 2) {
+if (strlen($search_term) < 2 || strlen($search_term) > 100) {
     echo json_encode(['results' => []]);
     exit();
 }

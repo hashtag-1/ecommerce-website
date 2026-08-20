@@ -59,6 +59,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_product'])) {
             $error = 'Price must be greater than 0';
         } elseif ($stock_quantity < 0) {
             $error = 'Stock quantity cannot be negative';
+        } elseif (strlen($name) > 150 || strlen($description) > 2000 || strlen($unit) > 50 || strlen($image) > 255) {
+            $error = 'One or more fields exceed maximum length';
+        } elseif (!in_array($status, ['active', 'inactive'], true)) {
+            $error = 'Invalid status value';
         } else {
             if (updateProduct($product_id, $category_id, $name, $description, $price, $stock_quantity, $unit, $image, $status)) {
                 setFlashMessage('Product updated successfully!', 'success');

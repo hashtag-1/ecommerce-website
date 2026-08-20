@@ -17,7 +17,15 @@ $name = trim($_POST['name'] ?? '');
 $rating = (int)($_POST['rating'] ?? 0);
 $reviewText = trim($_POST['review'] ?? '');
 
-if (!$name || $rating < 1 || $rating > 5 || !$reviewText) {
+if (!$name || strlen($name) > 100) {
+    echo json_encode(['success' => false, 'message' => 'Please fill all fields correctly.']);
+    exit;
+}
+if ($rating < 1 || $rating > 5) {
+    echo json_encode(['success' => false, 'message' => 'Please fill all fields correctly.']);
+    exit;
+}
+if (!$reviewText || strlen($reviewText) > 2000) {
     echo json_encode(['success' => false, 'message' => 'Please fill all fields correctly.']);
     exit;
 }

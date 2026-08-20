@@ -25,6 +25,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_category'])) {
 
         if (empty($name)) {
             $error = 'Category name is required';
+        } elseif (strlen($name) > 100 || strlen($description) > 500 || strlen($image) > 255) {
+            $error = 'One or more fields exceed maximum length';
+        } elseif (!in_array($status, ['active', 'inactive'], true)) {
+            $error = 'Invalid status value';
         } else {
             if (addCategory($name, $description, $image, $status)) {
                 setFlashMessage('Category added successfully!', 'success');

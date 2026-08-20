@@ -18,6 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['send_message'])) {
         $error = 'Please fill in all fields';
     } elseif (!validateEmail($email)) {
         $error = 'Please enter a valid email address';
+    } elseif (strlen($name) > 100 || strlen($subject) > 150 || strlen($message) > 2000) {
+        $error = 'One or more fields exceed maximum length';
     } else {
         $success = 'Thank you for your message! We will get back to you soon.';
     }

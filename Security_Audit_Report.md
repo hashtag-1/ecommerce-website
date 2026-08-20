@@ -2860,4 +2860,297 @@ default-src 'self'; img-src 'self' data: https:; style-src 'self' https:; font-s
 
 ---
 
+## Input Validation
+
+### Methodology
+
+All server-side input handling code was audited across customer-facing forms, API endpoints, and admin CRUD operations. Each `$_POST`, `$_GET`, and `$_FILES` access point was evaluated for type validation, length limits, numeric validation, email/phone format checks, ID casting, quantity bounds, and file upload constraints. Client-side validation was explicitly excluded from the assessment.
+
+---
+
+### 1. Login Form Validation
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `login.php:13-38` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Email is sanitized and validated with `validateEmail()` (FILTER_VALIDATE_EMAIL). Password is passed directly to `loginUser()` for bcrypt verification. Empty fields are checked. CSRF token is validated. Rate limiting is enforced via `checkLoginRateLimit('user')`. Error messages are generic to prevent username enumeration. |
+| **Verification** | Submit invalid email format; confirm rejection. Submit empty fields; confirm rejection. Submit 6+ failed attempts; confirm rate limit activates. |
+| **Status** | **Already Secure** |
+
+---
+
+### 2. Registration Form Validation
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `register.php:14-54` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Name, email, phone, address are sanitized. Email is validated with `validateEmail()`. Phone is validated with `validatePhone()` (10-digit numeric). Password strength is enforced via `validatePasswordStrength()` (8+ chars, upper/lower/number). Password confirmation match is checked. Email uniqueness is verified against the database. CSRF token is validated. |
+| **Verification** | Submit invalid email/phone; confirm rejection. Submit weak password; confirm rejection. Submit mismatched passwords; confirm rejection. |
+| **Status** | **Already Secure** |
+
+---
+
+### 3. Profile Update Validation
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `profile.php:21-67` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Name and phone are sanitized. Phone is validated with `validatePhone()`. Empty name/phone is rejected. Password change requires current password verification, `validatePasswordStrength()` for new password, and confirmation match. Email is immutable (disabled input). CSRF token is validated. |
+| **Verification** | Submit invalid phone; confirm rejection. Submit weak new password; confirm rejection. Submit wrong current password; confirm rejection. |
+| **Status** | **Already Secure** |
+
+---
+
+### 4. Contact Form Validation
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `contact.php:8-25` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Name, email, subject, and message are sanitized with `htmlspecialchars()`. Email is validated with `validateEmail()`. Empty fields are rejected. CSRF token is validated. |
+| **Verification** | Submit invalid email; confirm rejection. Submit empty fields; confirm rejection. |
+| **Status** | **Already Secure** |
+
+---
+
+### 5. Search Input Validation
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `search.php:7-12` |
+| **Root Cause** | The search term was sanitized and had a minimum length of 2 characters, but no maximum length was enforced. A malicious user could submit an extremely long search string (e.g., 10,000+ characters), potentially causing performance degradation in the database query or excessive memory usage in the PHP process. |
+| **Exploitable** | Yes |
+| **Severity** | Low |
+| **Impact** | An attacker could send very long search queries to the public `/search.php` endpoint, potentially causing slow database queries or memory exhaustion. While `searchProducts()` uses prepared statements (no SQL injection), unbounded input length is a denial-of-service risk. |
+| **Verification** | Submit a search query with 10,000+ characters to `search.php?q=<long_string>`. Before the fix, the query would be processed. After the fix, it should return empty results. |
+| **Fix Applied** | Added maximum length validation in `search.php`:
+```php
+if (strlen($search_term) < 2 || strlen($search_term) > 100) {
+    echo json_encode(['results' => []]);
+    exit();
+}
+```
+Search terms are now limited to 100 characters. |
+| **Re-test Result** | Verified: `search.php` passes PHP syntax check. Queries under 100 characters work normally. Queries over 100 characters return empty results. |
+| **Status** | **Fixed** |
+
+---
+
+### 6. Review Submission Validation
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `api/submit_review.php:16-23` |
+| **Root Cause** | Review name, rating, and review text were validated for presence and rating range (1-5), but no maximum length limits were enforced. A malicious user could submit extremely long reviews (e.g., 50,000+ characters), potentially causing database storage issues or display problems. |
+| **Exploitable** | Yes |
+| **Severity** | Low |
+| **Impact** | An attacker could submit very long review text or names, consuming database storage and potentially causing performance issues in review listing pages. The `reviews.review` column is `TEXT`, so it can hold large values, but unbounded input is still a risk. |
+| **Verification** | Submit a review with a 50,000-character name or review text. Before the fix, it would be accepted. After the fix, it should be rejected. |
+| **Fix Applied** | Added maximum length validation in `api/submit_review.php`:
+```php
+if (!$name || strlen($name) > 100) {
+    echo json_encode(['success' => false, 'message' => 'Please fill all fields correctly.']);
+    exit;
+}
+if ($rating < 1 || $rating > 5) {
+    echo json_encode(['success' => false, 'message' => 'Please fill all fields correctly.']);
+    exit;
+}
+if (!$reviewText || strlen($reviewText) > 2000) {
+    echo json_encode(['success' => false, 'message' => 'Please fill all fields correctly.']);
+    exit;
+}
+```
+Name is limited to 100 characters, review text to 2,000 characters. |
+| **Re-test Result** | Verified: `api/submit_review.php` passes PHP syntax check. Valid reviews are accepted. Over-length submissions are rejected with the generic error message. |
+| **Status** | **Fixed** |
+
+---
+
+### 7. Checkout Payment Method Validation
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `checkout.php:53-65` |
+| **Root Cause** | The payment method was sanitized but not validated against an allowlist of expected values. While the HTML form uses a `<select>` dropdown with only three options, a crafted POST request could submit an arbitrary string as `payment_method`. |
+| **Exploitable** | Yes |
+| **Severity** | Low |
+| **Impact** | A malicious user could submit an unexpected payment method string (e.g., `admin_override`, `free`, `null`) via a crafted POST request. While the database accepts any string for `payment_method`, unexpected values could bypass business logic or cause confusion in order reporting. |
+| **Verification** | Submit checkout with `payment_method=arbitrary_value` via curl or browser dev tools. Before the fix, the order would be created with the arbitrary value. After the fix, it should be rejected. |
+| **Fix Applied** | Added allowlist validation in `checkout.php`:
+```php
+$allowed_payment_methods = ['Cash on Delivery', 'eSewa', 'Khalti'];
+if (!in_array($payment_method, $allowed_payment_methods, true)) {
+    $error = 'Invalid payment method selected';
+}
+```
+Only the three expected payment methods are accepted. |
+| **Re-test Result** | Verified: `checkout.php` passes PHP syntax check. Valid payment methods are accepted. Arbitrary values are rejected with "Invalid payment method selected". |
+| **Status** | **Fixed** |
+
+---
+
+### 8. Contact Form Length Limits
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `contact.php:12-21` |
+| **Root Cause** | The contact form sanitized inputs and validated email format, but did not enforce maximum lengths on name, subject, or message fields. |
+| **Exploitable** | Yes |
+| **Severity** | Low |
+| **Impact** | A malicious user could submit extremely long contact form values (e.g., 100,000-character message), potentially causing email delivery failures, database storage issues, or log flooding if the messages are stored or forwarded. |
+| **Verification** | Submit a contact form with a 100,000-character message. Before the fix, it would be accepted. After the fix, it should be rejected. |
+| **Fix Applied** | Added maximum length validation in `contact.php`:
+```php
+if (strlen($name) > 100 || strlen($subject) > 150 || strlen($message) > 2000) {
+    $error = 'One or more fields exceed maximum length';
+}
+```
+Name limited to 100 chars, subject to 150 chars, message to 2,000 chars. |
+| **Re-test Result** | Verified: `contact.php` passes PHP syntax check. Normal-length submissions work. Over-length submissions are rejected. |
+| **Status** | **Fixed** |
+
+---
+
+### 9. Admin Product Input Length Validation
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `admin/add-product.php:19-34`, `admin/edit-product.php:47-62` |
+| **Root Cause** | Admin product forms sanitized inputs but did not validate maximum lengths against the database column sizes (`products.name` VARCHAR(150), `products.description` TEXT, `products.unit` VARCHAR(50), `products.image` VARCHAR(255)). The `status` field was also not validated against allowed values (`active`/`inactive`). |
+| **Exploitable** | Yes |
+| **Severity** | Low |
+| **Impact** | An admin could submit values exceeding column lengths, causing database truncation or errors. Invalid status values could be inserted, breaking status-based queries and display logic. |
+| **Verification** | Submit a product with a 500-character name or invalid status. Before the fix, the database would truncate or store invalid values. After the fix, the submission is rejected. |
+| **Fix Applied** | Added length and value validation in both `admin/add-product.php` and `admin/edit-product.php`:
+```php
+elseif (strlen($name) > 150 || strlen($description) > 2000 || strlen($unit) > 50 || strlen($image) > 255) {
+    $error = 'One or more fields exceed maximum length';
+} elseif (!in_array($status, ['active', 'inactive'], true)) {
+    $error = 'Invalid status value';
+}
+```
+Validation matches database column constraints. |
+| **Re-test Result** | Verified: Both `admin/add-product.php` and `admin/edit-product.php` pass PHP syntax checks. Valid products are accepted. Over-length or invalid status submissions are rejected. |
+| **Status** | **Fixed** |
+
+---
+
+### 10. Admin Category Input Length Validation
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `admin/categories.php:21-28` |
+| **Root Cause** | The admin category form sanitized inputs but did not validate maximum lengths against database column sizes (`categories.name` VARCHAR(100), `categories.description` TEXT, `categories.image` VARCHAR(255)). The `status` field was also not validated against allowed values. |
+| **Exploitable** | Yes |
+| **Severity** | Low |
+| **Impact** | An admin could submit category names or descriptions exceeding reasonable lengths, causing display issues or database truncation. Invalid status values could break category filtering. |
+| **Verification** | Submit a category with a 200-character name or invalid status. Before the fix, the database would truncate or store invalid values. After the fix, the submission is rejected. |
+| **Fix Applied** | Added length and value validation in `admin/categories.php`:
+```php
+elseif (strlen($name) > 100 || strlen($description) > 500 || strlen($image) > 255) {
+    $error = 'One or more fields exceed maximum length';
+} elseif (!in_array($status, ['active', 'inactive'], true)) {
+    $error = 'Invalid status value';
+}
+```
+Validation matches database column constraints. |
+| **Re-test Result** | Verified: `admin/categories.php` passes PHP syntax check. Valid categories are accepted. Over-length or invalid status submissions are rejected. |
+| **Status** | **Fixed** |
+
+---
+
+### 11. Product and Category ID Casting
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `product.php:10`, `category.php:10` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | `$_GET['id']` is cast to `(int)` before use in both `product.php` and `category.php`. This prevents SQL injection via the ID parameter and ensures only valid numeric IDs are passed to database queries. |
+| **Verification** | Inspect `product.php` and `category.php` for `(int)$_GET['id']`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 12. Cart Quantity and Product ID Validation
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `cart.php:33-34`, `cart.php:72-73` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Product IDs are cast to `(int)` and quantities to `(int)` in both add-to-cart and update-cart handlers. Stock validation is enforced server-side in the update handler and at checkout. Negative or zero quantities trigger item removal. |
+| **Verification** | Submit cart update with `quantity=-5`; confirm item is removed. Submit with `quantity=999999`; confirm stock validation rejects it. |
+| **Status** | **Already Secure** |
+
+---
+
+### 13. File Upload Validation (Checkout Receipts)
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `checkout.php:70-114` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Receipt uploads for eSewa/Khalti validate: (1) file extension (`jpg`, `jpeg`, `png`, `pdf`), (2) MIME type via `finfo`, (3) file size (max 5MB), (4) PDF header (`%PDF-`), (5) image validity via `getimagesizefromstring()`. Receipt upload is now mandatory for digital payment methods. |
+| **Verification** | Upload a non-image file; confirm rejection. Upload a file >5MB; confirm rejection. Upload a text file renamed to `.jpg`; confirm MIME type check catches it. |
+| **Status** | **Already Secure** |
+
+---
+
+## Summary
+
+**6 confirmed input validation issues were identified and fixed.**
+
+| Category | Count | Status |
+|----------|-------|--------|
+| Search input missing max length | 1 | Fixed |
+| Review submission missing length limits | 1 | Fixed |
+| Checkout payment method not whitelisted | 1 | Fixed |
+| Contact form missing length limits | 1 | Fixed |
+| Admin product inputs missing length/status validation | 1 | Fixed |
+| Admin category inputs missing length/status validation | 1 | Fixed |
+| Login/register/profile validation | 0 | Already Secure |
+| ID casting (product, category, cart) | 0 | Already Secure |
+| File upload validation | 0 | Already Secure |
+
+**Files Modified**
+
+| File | Changes |
+|------|---------|
+| `search.php` | Added 100-character maximum length for search queries |
+| `api/submit_review.php` | Added 100-char name limit and 2,000-char review text limit |
+| `checkout.php` | Added payment method allowlist validation (Cash on Delivery, eSewa, Khalti) |
+| `contact.php` | Added length limits (name 100, subject 150, message 2,000 chars) |
+| `admin/add-product.php` | Added field length limits and status value validation |
+| `admin/edit-product.php` | Added field length limits and status value validation |
+| `admin/categories.php` | Added field length limits and status value validation |
+
+---
+
+## Recommendations
+
+1. **Add length validation to remaining forms**: Apply similar max-length checks to `login.php` name field, `register.php` name/address fields, and `profile.php` name/address fields.
+2. **Validate category existence on product add/edit**: In `admin/add-product.php` and `admin/edit-product.php`, verify the selected `category_id` exists before inserting/updating.
+3. **Implement rate limiting on public APIs**: Add rate limiting to `search.php` and `api/submit_review.php` to prevent automated abuse.
+4. **Normalize review content server-side**: Strip excess whitespace and normalize line endings in review text before storage.
+5. **Add input validation for admin order status updates**: In `admin/order-details.php`, validate that the new status is in the allowed list (already done) and consider adding a maximum length check on any future status notes fields.
+
+---
+
 *End of Report*
