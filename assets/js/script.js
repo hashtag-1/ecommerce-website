@@ -954,7 +954,6 @@ document.addEventListener('DOMContentLoaded', function() {
 // Seed2Greens - Customer Reviews
 // ============================================
 (function() {
-    const STORAGE_KEY = 'seed2greens_reviews';
     const track = document.getElementById('reviewsTrack');
     const modalOverlay = document.getElementById('reviewModalOverlay');
     const openModalBtn = document.getElementById('openReviewModal');
@@ -980,14 +979,12 @@ document.addEventListener('DOMContentLoaded', function() {
         { name: 'Shobhindra Budhathoki', rating: 5, review: 'As a commercial grower, I need reliable supplies. Seed 2 Greens has become my go-to for bulk seeds and fertilizers. Consistent quality every time.' }
     ];
 
-    function getReviews() {
+    async function fetchReviews() {
         try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) {
-                const data = JSON.parse(raw);
-                if (Array.isArray(data) && data.length > 0) {
-                    return data;
-                }
+            const response = await fetch('api/get_reviews.php');
+            const data = await response.json();
+            if (data.success && Array.isArray(data.reviews) && data.reviews.length > 0) {
+                return data.reviews;
             }
         } catch (e) {
             // ignore
@@ -995,11 +992,21 @@ document.addEventListener('DOMContentLoaded', function() {
         return seedReviews.slice();
     }
 
-    function saveReviews(reviews) {
+    async function submitReview(name, rating, reviewText) {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(reviews));
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('rating', rating);
+            formData.append('review', reviewText);
+
+            const response = await fetch('api/submit_review.php', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            return data;
         } catch (e) {
-            // ignore
+            return { success: false, message: 'Network error. Please try again.' };
         }
     }
 
@@ -1039,10 +1046,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return div.innerHTML;
     }
 
-    function renderCarousel() {
+    function renderCarousel(reviews) {
         if (!track) return;
         track.innerHTML = '';
-        const reviews = getReviews();
+        if (!reviews) {
+            reviews = [];
+        }
         const fragment = document.createDocumentFragment();
         reviews.forEach(function(review) {
             fragment.appendChild(createReviewCard(review));
@@ -1056,9 +1065,10 @@ document.addEventListener('DOMContentLoaded', function() {
         track.appendChild(clone);
     }
 
-    function initReviews() {
+    async function initReviews() {
         if (!track) return;
-        renderCarousel();
+        const reviews = await fetchReviews();
+        renderCarousel(reviews);
         currentTranslate = 0;
         track.style.transform = 'translate3d(0, 0, 0)';
     }
@@ -1323,7 +1333,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    reviewForm.addEventListener('submit', function(e) {
+    reviewForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         clearErrors();
 
@@ -1348,11 +1358,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!valid) return;
 
-        const reviews = getReviews();
-        reviews.unshift({ name: name, rating: selectedRating, review: text, date: new Date().toISOString() });
-        saveReviews(reviews);
-        renderCarousel();
-        closeModal();
+        const result = await submitReview(name, selectedRating, text);
+        if (result.success) {
+            const reviews = await fetchReviews();
+            renderCarousel(reviews);
+            closeModal();
+        }
     });
 
     if (document.readyState === 'loading') {

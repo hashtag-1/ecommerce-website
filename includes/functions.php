@@ -617,3 +617,131 @@ function timeAgo($datetime) {
     if ($time < 86400) return floor($time / 3600) . ' hours ago';
     return date('M d, Y', strtotime($datetime));
 }
+
+// ============================================
+// Review Helper Functions
+// ============================================
+
+function getAllReviews() {
+    global $db;
+    $stmt = $db->prepare("SELECT * FROM reviews ORDER BY created_at DESC");
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
+function getReviewById($id) {
+    global $db;
+    $stmt = $db->prepare("SELECT * FROM reviews WHERE id = ?");
+    $stmt->execute([(int)$id]);
+    return $stmt->fetch();
+}
+
+function deleteReview($id) {
+    global $db;
+    $stmt = $db->prepare("DELETE FROM reviews WHERE id = ?");
+    return $stmt->execute([(int)$id]);
+}
+
+function addReview($name, $email, $rating, $reviewText) {
+    global $db;
+    $stmt = $db->prepare("
+        INSERT INTO reviews (name, email, rating, review, status)
+        VALUES (?, ?, ?, ?, 'active')
+    ");
+    return $stmt->execute([$name, $email, (int)$rating, $reviewText]);
+}
+
+function getFeaturedReviews($mode = 'top_rated', $limit = 10) {
+    global $db;
+    $mode = in_array($mode, ['top_rated', 'latest', 'manual'], true) ? $mode : 'top_rated';
+
+    if ($mode === 'manual') {
+        $stmt = $db->prepare("
+            SELECT * FROM reviews
+            WHERE status = 'active' AND is_featured = 1
+            ORDER BY created_at DESC
+            LIMIT ?
+        ");
+        $stmt->execute([(int)$limit]);
+        return $stmt->fetchAll();
+    }
+
+    if ($mode === 'latest') {
+        $stmt = $db->prepare("
+            SELECT * FROM reviews
+            WHERE status = 'active'
+            ORDER BY created_at DESC
+            LIMIT ?
+        ");
+        $stmt->execute([(int)$limit]);
+        return $stmt->fetchAll();
+    }
+
+    $stmt = $db->prepare("
+        SELECT * FROM reviews
+        WHERE status = 'active'
+        ORDER BY rating DESC, created_at DESC
+        LIMIT ?
+    ");
+    $stmt->execute([(int)$limit]);
+    return $stmt->fetchAll();
+}
+
+function getFeaturedMode() {
+    global $db;
+    $stmt = $db->prepare("SELECT setting_value FROM site_settings WHERE setting_key = 'reviews_feature_mode'");
+    $stmt->execute();
+    $result = $stmt->fetch();
+    return $result['setting_value'] ?? 'top_rated';
+}
+
+function setFeaturedMode($mode) {
+    global $db;
+    $mode = in_array($mode, ['top_rated', 'latest', 'manual'], true) ? $mode : 'top_rated';
+    $stmt = $db->prepare("
+        INSERT INTO site_settings (setting_key, setting_value) VALUES ('reviews_feature_mode', ?)
+        ON DUPLICATE KEY UPDATE setting_value = ?
+    ");
+    return $stmt->execute([$mode, $mode]);
+}
+
+function setManualFeaturedReviews($reviewIds) {
+    global $db;
+    $ids = array_map('intval', array_filter($reviewIds, function($id) { return $id > 0; }));
+    $ids = array_unique($ids);
+
+    $db->beginTransaction();
+    try {
+        $stmt = $db->prepare("UPDATE reviews SET is_featured = 0");
+        $stmt->execute();
+
+        if (!empty($ids)) {
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $stmt = $db->prepare("UPDATE reviews SET is_featured = 1 WHERE id IN ($placeholders)");
+            $stmt->execute($ids);
+        }
+
+        $db->commit();
+        return true;
+    } catch (Exception $e) {
+        $db->rollBack();
+        return false;
+    }
+}
+
+function getSiteSetting($key) {
+    global $db;
+    $stmt = $db->prepare("SELECT setting_value FROM site_settings WHERE setting_key = ?");
+    $stmt->execute([$key]);
+    $result = $stmt->fetch();
+    return $result['setting_value'] ?? null;
+}
+
+function setSiteSetting($key, $value) {
+    global $db;
+    $stmt = $db->prepare("
+        INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?)
+        ON DUPLICATE KEY UPDATE setting_value = ?
+    ");
+    return $stmt->execute([$key, $value, $value]);
+}

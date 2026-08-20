@@ -245,3 +245,48 @@ INSERT INTO wishlist (user_id, product_id) VALUES
 (1, 18),
 (2, 1),
 (2, 14);
+
+-- ============================================
+-- Reviews Table
+-- ============================================
+CREATE TABLE reviews (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100),
+    rating INT NOT NULL DEFAULT 5,
+    review TEXT NOT NULL,
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    is_featured TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_status (status),
+    INDEX idx_featured (is_featured),
+    INDEX idx_rating (rating),
+    INDEX idx_created (created_at)
+);
+
+-- ============================================
+-- Site Settings Table
+-- ============================================
+CREATE TABLE site_settings (
+    setting_key VARCHAR(50) PRIMARY KEY,
+    setting_value TEXT
+);
+
+INSERT INTO site_settings (setting_key, setting_value) VALUES
+('reviews_feature_mode', 'top_rated');
+
+-- ============================================
+-- Insert Sample Reviews
+-- ============================================
+INSERT INTO reviews (name, rating, review, status, is_featured, created_at) VALUES
+('Samir Bhandari', 5, 'I ordered a few vegetable seeds for my home garden and was really impressed with the quality. The seeds arrived well packed and the growing results have been great.', 'active', 1, '2024-01-15 10:00:00'),
+('Sambhab Karna', 5, 'Fresh produce at my doorstep in Kathmandu — what more could I ask for? The tomatoes and spinach were honestly the best I have had in a while.', 'active', 1, '2024-01-20 14:30:00'),
+('Shital Adhikari', 4, 'Good variety of organic fertilizers and tools. Ordering was simple and delivery was on time. Would love to see more seed options in the future.', 'active', 1, '2024-02-05 09:15:00'),
+('Sabita Maharjan', 5, 'The vermicompost I bought transformed my balcony garden. My plants are healthier and producing more than ever. Highly recommended for home gardeners.', 'active', 1, '2024-02-18 16:45:00'),
+('Amit Rai', 5, 'Seed quality is consistently good. I have ordered multiple times and every packet has had high germination rates. Packaging is also neat and secure.', 'active', 1, '2024-03-02 11:20:00'),
+('Sumila Shakya', 4, 'I appreciate the focus on organic products. The fertilizers work well and customer support was helpful when I had questions about application.', 'active', 1, '2024-03-15 13:10:00'),
+('Karan Timalsina', 5, 'The gardening gloves and hand trowel I ordered are sturdy and comfortable. Great build quality for the price. Will definitely order more tools from here.', 'active', 1, '2024-04-01 08:50:00'),
+('Sadish Thapa', 5, 'Fast delivery and genuine organic products. The fresh cauliflower and carrots were crisp and lasted much longer than supermarket produce.', 'active', 1, '2024-04-12 15:25:00'),
+('Shovit Shrestha', 4, 'Simple ordering process and good product range. The cucumber seeds gave a nice yield. Minor suggestion: add more seasonal items during festivals.', 'active', 1, '2024-05-08 10:40:00'),
+('Shobhindra Budhathoki', 5, 'As a commercial grower, I need reliable supplies. Seed 2 Greens has become my go-to for bulk seeds and fertilizers. Consistent quality every time.', 'active', 1, '2024-05-22 12:00:00');
