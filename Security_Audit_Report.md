@@ -1361,4 +1361,194 @@ All file path handling, include/require statements, and user-influenced file acc
 
 ---
 
+## Command/Code Injection
+
+### Methodology
+
+A comprehensive search was performed across all PHP files for dangerous functions and constructs:
+- Shell execution: `system()`, `exec()`, `shell_exec()`, `passthru()`, `popen()`, `proc_open()`, backticks
+- Code evaluation: `eval()`, `assert()`, `create_function()`, `preg_replace()` with `/e`
+- Dynamic code execution: dynamic `require`/`include` paths influenced by user input
+- Unsafe deserialization: `unserialize()`, `maybe_unserialize()`
+- Other vectors: `extract()`, `parse_str()`, `mail()`, `curl_*`, dynamic class instantiation
+
+All identified usages were traced to verify whether user-controlled data (`$_GET`, `$_POST`, `$_REQUEST`, `$_FILES`, `$_COOKIE`, `$_SERVER`) reaches these functions.
+
+---
+
+### 1. No Shell Execution Functions
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | Project-wide |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Zero instances of `system()`, `exec()`, `shell_exec()`, `passthru()`, `popen()`, `proc_open()`, `pcntl_exec()`, or backtick shell execution were found in the codebase. The only `exec` match is `$db->exec()` in `includes/auth.php:219`, which is PDO's SQL DDL execution method (not OS command execution). |
+| **Verification** | Grep for `system(`, `exec(`, `shell_exec(`, `passthru(`, `popen(`, `proc_open(`, and backticks across all PHP files. |
+| **Status** | **Already Secure** |
+
+---
+
+### 2. No Code Evaluation Functions
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | Project-wide |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Zero instances of `eval()`, `assert()`, `create_function()`, or `preg_replace()` with `/e` modifier were found. No dynamic PHP code execution vectors exist. |
+| **Verification** | Grep for `eval(`, `assert(`, `create_function`, `preg_replace` with `/e`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 3. No Unsafe Deserialization
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | Project-wide |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Zero instances of `unserialize()`, `maybe_unserialize()`, or `json_decode()` with `true` (object mode) were found. The application does not use PHP object serialization, eliminating deserialization-based code execution (e.g., POP chains). |
+| **Verification** | Grep for `unserialize(`, `maybe_unserialize`, `json_decode(.*Object`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 4. Dynamic Include Paths — API Router (`api/index.php`)
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `api/index.php:require $target` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | The Vercel PHP router accepts `$_GET['file']` and includes the resolved file via `require $target`. However, `$target` is validated through multiple layers: (1) `.php` extension whitelist, (2) blocked directory prefix list, (3) `realpath()` resolution, and (4) root containment check (`strpos($target, $rootReal . DIRECTORY_SEPARATOR) === 0`). User input cannot escape the project root or bypass the extension check. This was audited in detail in the Path Traversal / LFI section. |
+| **Verification** | Confirm all four validation layers are present and that no user input reaches `require` without passing through them. |
+| **Status** | **Already Secure** |
+
+---
+
+### 5. PDO `exec()` — Not Shell Execution
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/auth.php:placeOrder()` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | `$db->exec()` is used once to execute a hardcoded DDL statement (`ALTER TABLE orders ADD COLUMN ...`). This is PDO's SQL execution method, not PHP's `exec()` shell function. The SQL string is fully static with no user input. |
+| **Verification** | Confirm the SQL string contains no variables or user input. |
+| **Status** | **Already Secure** |
+
+---
+
+### 6. No Dynamic `require`/`include` With User Input
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | All PHP files |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | All `require`/`include` statements in the project use static paths with `__DIR__`. No `require`/`include` statement accepts user input from `$_GET`, `$_POST`, `$_REQUEST`, `$_FILES`, `$_COOKIE`, or `$_SERVER`. The sole exception is `api/index.php`, which is protected by `realpath()` containment (see Finding #4). |
+| **Verification** | Grep for `require.*\$_(GET\|POST\|REQUEST\|FILES\|COOKIE\|SERVER)` and `include.*\$_(GET\|POST\|REQUEST\|FILES\|COOKIE\|SERVER)`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 7. No `extract()`, `parse_str()`, or Other Variable Overwrite Vectors
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | Project-wide |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Zero instances of `extract()`, `parse_str()`, or `mb_parse_str()` were found. These functions can overwrite local variables with user input, potentially leading to variable injection or remote code execution in certain contexts. |
+| **Verification** | Grep for `extract(`, `parse_str(`, `mb_parse_str(`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 8. `.env` File Exposure Risk
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `.env`, `config/database.php:loadEnv()` |
+| **Root Cause** | The `.env` file is located in the web root (`C:\xampp\htdocs\ecommerce-website\.env`) and contains plaintext database credentials (`DB_HOST`, `DB_USER`, `DB_PASS`) and payment gateway secrets (`ESEWA_SECRET_KEY`). No `.htaccess` rule or web server configuration blocks direct HTTP access to `.env` files. |
+| **Exploitable** | Yes (if web server does not block `.env` access) |
+| **Severity** | Critical |
+| **Impact** | If the `.env` file is web-accessible, an attacker can download it and obtain plaintext database credentials. This enables immediate SQL injection (via direct database connection), data exfiltration, and potential server compromise. While this is not direct command/code injection, it is a critical prerequisite for database-level code execution. |
+| **Verification** | Attempt to access `http://localhost/ecommerce-website/.env` in a browser. If the file contents are displayed, it is vulnerable. Check for `.htaccess` rules denying `\.env` files. |
+| **Fix Applied** | None applied — this requires web server configuration changes, not code changes. |
+| **Re-test Result** | N/A |
+| **Status** | **Requires Manual Verification** |
+
+---
+
+### 9. `putenv()` Usage With `.env` Data
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `config/database.php:loadEnv()` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | `putenv("$key=$value")` reads from the `.env` file, not from user HTTP input. The `.env` file is server-side only. While `putenv()` can be used to manipulate the process environment, it is not reachable by user input in this implementation. |
+| **Verification** | Confirm `.env` file is not user-controlled and that `loadEnv()` is only called with the hardcoded `.env` path. |
+| **Status** | **Already Secure** |
+
+---
+
+### 10. No JS `eval()` or Dynamic Code Execution
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `assets/js/script.js`, `assets/js/nav.js` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Zero instances of `eval()`, `new Function()`, or `setTimeout(string)` / `setInterval(string)` with user-controlled strings were found in the JavaScript codebase. All DOM manipulation uses safe methods (`textContent`, `className`, `src`/`href` assignment with sanitized values). |
+| **Verification** | Grep for `eval(`, `new Function`, `setTimeout(`, `setInterval(` with string arguments. |
+| **Status** | **Already Secure** |
+
+---
+
+## Summary
+
+**No command/code injection vulnerabilities were identified in the Seed2Greens codebase.**
+
+| Category | Count | Status |
+|----------|-------|--------|
+| Shell execution functions | 0 | Already Secure |
+| Code evaluation functions | 0 | Already Secure |
+| Unsafe deserialization | 0 | Already Secure |
+| Dynamic include paths | 0 | Already Secure (router protected by realpath containment) |
+| PDO exec (misidentified) | 0 | Already Secure (PDO SQL, not OS command) |
+| extract/parse_str | 0 | Already Secure |
+| JS eval/dynamic execution | 0 | Already Secure |
+| `.env` exposure | 1 | Requires Manual Verification |
+
+**Files Modified**
+
+| File | Changes |
+|------|---------|
+| None — no command/code injection vulnerabilities were found to fix. |
+
+---
+
+## Recommendations
+
+1. **Block `.env` access via web server**: Add an `.htaccess` rule (`<FilesMatch "^\.env"> Require all denied </FilesMatch>`) or equivalent Nginx configuration to prevent direct HTTP access to `.env`. This is the highest-priority action item from this audit.
+2. **Move `.env` outside web root**: Consider placing `.env` one level above the document root so it is never web-accessible, regardless of server configuration.
+3. **Rotate exposed credentials**: If `.env` was ever accessible, rotate the database password (`DB_PASS`), eSewa secret key (`ESEWA_SECRET_KEY`), and any other secrets.
+4. **Maintain the current clean codebase practices**: Continue avoiding `eval()`, `exec()`, `shell_exec()`, `unserialize()`, and dynamic includes. The absence of these functions is a strong security posture.
+5. **Add a CI lint rule**: Consider adding a static analysis rule (e.g., PHPStan with security rules, or a custom grep-based CI check) that fails the build if any of the dangerous functions are introduced in future commits.
+
+---
+
 *End of Report*
