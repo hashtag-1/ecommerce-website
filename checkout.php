@@ -99,6 +99,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
                                 <option value="eSewa" <?php echo (isset($_POST['payment_method']) && $_POST['payment_method'] == 'eSewa') ? 'selected' : ''; ?>>eSewa (Coming Soon)</option>
                                 <option value="Khalti" <?php echo (isset($_POST['payment_method']) && $_POST['payment_method'] == 'Khalti') ? 'selected' : ''; ?>>Khalti (Coming Soon)</option>
                             </select>
+                            
+                            <div id="payment-qr-container" style="margin-top: 15px; display: none;">
+                                <img id="esewa-qr" src="img/esewa.png" alt="eSewa QR" style="display: none; max-width: 200px; height: auto; border-radius: var(--radius); border: 1px solid var(--border);">
+                                <img id="khalti-qr" src="img/khalti.png" alt="Khalti QR" style="display: none; max-width: 200px; height: auto; border-radius: var(--radius); border: 1px solid var(--border);">
+                            </div>
+                            
                             <small style="color: var(--text-light);">Only Cash on Delivery is active currently</small>
                         </div>
                     </div>

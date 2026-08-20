@@ -252,6 +252,37 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // === Payment Method QR Toggle ===
+    const paymentMethodSelect = document.getElementById('payment_method');
+    const qrContainer = document.getElementById('payment-qr-container');
+    const esewaQr = document.getElementById('esewa-qr');
+    const khaltiQr = document.getElementById('khalti-qr');
+    
+    function updatePaymentQr() {
+        if (!paymentMethodSelect || !qrContainer || !esewaQr || !khaltiQr) return;
+        
+        const method = paymentMethodSelect.value;
+        
+        if (method === 'eSewa') {
+            qrContainer.style.display = 'block';
+            esewaQr.style.display = 'block';
+            khaltiQr.style.display = 'none';
+        } else if (method === 'Khalti') {
+            qrContainer.style.display = 'block';
+            esewaQr.style.display = 'none';
+            khaltiQr.style.display = 'block';
+        } else {
+            qrContainer.style.display = 'none';
+            esewaQr.style.display = 'none';
+            khaltiQr.style.display = 'none';
+        }
+    }
+    
+    if (paymentMethodSelect) {
+        paymentMethodSelect.addEventListener('change', updatePaymentQr);
+        updatePaymentQr();
+    }
+    
     // === Smooth scroll for anchor links ===
     document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
         anchor.addEventListener('click', function(e) {
