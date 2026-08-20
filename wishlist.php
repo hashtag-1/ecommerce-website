@@ -31,13 +31,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['toggle_wishlist'])) {
 }
 
 // Handle Remove from Wishlist
-if (isset($_GET['remove'])) {
-    $product_id = (int)$_GET['remove'];
-    removeFromWishlist($user_id, $product_id);
-    setFlashMessage('Removed from wishlist', 'success');
-    redirect('wishlist.php');
-}
-
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['remove_from_wishlist'])) {
     if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
         setFlashMessage('Invalid request. Please try again.', 'error');

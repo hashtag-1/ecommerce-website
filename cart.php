@@ -88,13 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_cart'])) {
 }
 
 // Handle Remove from Cart
-if (isset($_GET['remove'])) {
-    $product_id = (int)$_GET['remove'];
-    removeFromCart($user_id, $product_id);
-    setFlashMessage('Product removed from cart', 'success');
-    redirect('cart.php');
-}
-
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['remove_from_cart'])) {
     if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
         setFlashMessage('Invalid request. Please try again.', 'error');

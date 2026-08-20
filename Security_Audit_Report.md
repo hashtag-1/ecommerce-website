@@ -1551,4 +1551,232 @@ All identified usages were traced to verify whether user-controlled data (`$_GET
 
 ---
 
+## API/Endpoint Security
+
+### Methodology
+
+All PHP endpoints were audited through the Vercel PHP router (`api/index.php`). Every endpoint was evaluated for:
+- Authentication requirements and enforcement
+- Authorization checks (IDOR, ownership validation)
+- CSRF protection on state-changing operations
+- HTTP method restrictions (GET should be safe/read-only)
+- Input validation and sanitization
+- Output encoding
+- Sensitive data exposure
+- ID manipulability
+
+The router routes ALL `.php` files via `api/index.php?file=<path>`, making every PHP file an API endpoint on Vercel.
+
+---
+
+### 1. Router Security (`api/index.php`)
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `api/index.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | The router implements multiple layers of protection: (1) `.php` extension whitelist, (2) blocked directory/prefix list (`config/`, `includes/`, `database/`, `api/index.php`), (3) `realpath()` resolution to prevent `../` traversal, (4) root containment check ensuring the resolved path stays inside the project. Self-inclusion (`api/index.php?file=api/index.php`) is blocked. No user input reaches `require` without passing through all four layers. |
+| **Verification** | Request `api/index.php?file=../config/database.php` and `api/index.php?file=api/index.php`; both should return 404. |
+| **Status** | **Already Secure** |
+
+---
+
+### 2. GET-Based Cart Remove Without CSRF
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `cart.php:91-96` |
+| **Root Cause** | Cart item removal was handled via a GET request (`cart.php?remove=<product_id>`) without CSRF token validation. While the UI was updated to use POST forms with CSRF tokens, the legacy GET handler remained active. |
+| **Exploitable** | Yes |
+| **Severity** | Medium |
+| **Impact** | An attacker could craft a URL or image tag (`<img src="https://target.com/cart.php?remove=123">`) that, when visited by a logged-in victim, would remove items from their cart without consent. This is a CSRF vulnerability combined with an unsafe HTTP method for a state-changing operation. |
+| **Verification** | While logged in, visit `cart.php?remove=<product_id>` directly; observe item removal without any token validation. |
+| **Fix Applied** | Removed the GET-based remove handler entirely. Cart removal now only accepts POST requests with valid CSRF tokens via the form at `cart.php:98-100`. |
+| **Re-test Result** | Verified: GET requests to `cart.php?remove=...` no longer remove items. POST form with CSRF token works correctly. PHP syntax check passes. |
+| **Status** | **Fixed** |
+
+---
+
+### 3. GET-Based Wishlist Remove Without CSRF
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `wishlist.php:34-39` |
+| **Root Cause** | Wishlist item removal was handled via a GET request (`wishlist.php?remove=<product_id>`) without CSRF token validation. The UI was updated to use POST forms, but the legacy GET handler remained. |
+| **Exploitable** | Yes |
+| **Severity** | Medium |
+| **Impact** | An attacker could craft a URL or image tag that removes items from a victim's wishlist via CSRF. |
+| **Verification** | While logged in, visit `wishlist.php?remove=<product_id>` directly; observe item removal without token validation. |
+| **Fix Applied** | Removed the GET-based remove handler. Wishlist removal now only accepts POST requests with valid CSRF tokens via the form at `wishlist.php:41-50`. |
+| **Re-test Result** | Verified: GET requests to `wishlist.php?remove=...` no longer remove items. POST form with CSRF token works correctly. PHP syntax check passes. |
+| **Status** | **Fixed** |
+
+---
+
+### 4. Admin GET-Based Delete Actions With CSRF Token in URL
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `admin/customers.php:10-18`, `admin/categories.php:40-48`, `admin/reviews.php:13-26`, `admin/users.php:14-22` |
+| **Root Cause** | Admin delete actions (users, categories, reviews) use GET requests with CSRF tokens passed as query parameters (`?delete=<id>&csrf_token=<token>`). While this provides CSRF protection, it is an anti-pattern because: (1) GET should be safe/idempotent per HTTP semantics, (2) CSRF tokens in URLs are logged in server access logs, browser history, and `Referer` headers, (3) GET requests can be triggered by image tags, link prefetching, or CSRF with token theft. |
+| **Exploitable** | No (CSRF token provides protection) |
+| **Severity** | Low |
+| **Impact** | Defense-in-depth risk. If an attacker can read server logs or `Referer` headers, they could extract CSRF tokens and forge delete requests. The current implementation is not vulnerable to standard CSRF, but token exposure in URLs weakens security posture. |
+| **Verification** | Inspect admin pages for delete links with `csrf_token` in query string. Check server logs for token exposure. |
+| **Fix Applied** | None — these endpoints already validate CSRF tokens. Converting them to POST forms would be a larger change across multiple admin pages. This is noted as a defense-in-depth improvement for future refactoring. |
+| **Re-test Result** | N/A |
+| **Status** | **Requires Manual Verification** (consider converting to POST forms in future update) |
+
+---
+
+### 5. Public API Endpoints — Authentication and Authorization
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `search.php`, `api/get_reviews.php`, `api/submit_review.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Public API endpoints are intentionally unauthenticated: `search.php` returns product search results, `api/get_reviews.php` returns featured reviews, and `api/submit_review.php` accepts review submissions. None expose sensitive user data. `api/submit_review.php` validates CSRF tokens. `search.php` sanitizes the `q` parameter. All endpoints cast/validate IDs to integers. No IDOR risk exists because no user-specific data is returned. |
+| **Verification** | Confirm `search.php` and `api/get_reviews.php` require no login. Confirm they return only public product/review data. |
+| **Status** | **Already Secure** |
+
+---
+
+### 6. Authenticated Endpoint Authorization — IDOR Checks
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `orders.php`, `order-details.php`, `cart.php`, `wishlist.php`, `checkout.php`, `profile.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | All authenticated customer endpoints enforce ownership: `orders.php` uses `getUserOrders($user_id)`, `order-details.php` verifies `$order['user_id'] != $_SESSION['user_id']`, `cart.php` and `wishlist.php` use `$_SESSION['user_id']` for all queries, `checkout.php` and `profile.php` exclusively reference the session user ID. No endpoint accepts a user-supplied `user_id` or `owner_id` parameter. User A cannot access or modify User B's data through ID manipulation. |
+| **Verification** | For each endpoint, confirm no `$_GET['user_id']` or `$_POST['user_id']` is used. Confirm session ID is the sole ownership mechanism. |
+| **Status** | **Already Secure** |
+
+---
+
+### 7. Admin Endpoint Authorization
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `admin/*.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Every admin endpoint (`dashboard.php`, `orders.php`, `products.php`, `customers.php`, `reviews.php`, `settings.php`, `order-details.php`, `receipt.php`, etc.) enforces `isAdminLoggedIn()` at the top of the file. Admin and customer sessions use separate keys. A customer with a valid user session cannot access any admin endpoint. |
+| **Verification** | Attempt to access `admin/dashboard.php` without an admin session; should redirect to `admin/login.php`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 8. Sensitive Data Exposure in API Responses
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `search.php`, `api/get_reviews.php`, `api/submit_review.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | API responses are carefully scoped: `search.php` returns only `id`, `name`, `price`, `image`, `category` — no internal IDs, costs, or supplier data. `api/get_reviews.php` returns only public review fields. `api/submit_review.php` returns only success/failure status. No passwords, session tokens, or internal identifiers are exposed. |
+| **Verification** | Inspect JSON response structures for all API endpoints. Confirm no sensitive fields (password hashes, internal IDs, session tokens) are included. |
+| **Status** | **Already Secure** |
+
+---
+
+### 9. Input Validation on API Endpoints
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `search.php`, `api/submit_review.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | `search.php` sanitizes `$_GET['q']` via `sanitize()` and enforces a minimum length of 2 characters. `api/submit_review.php` validates `name` is non-empty, `rating` is cast to integer and checked to be 1-5, and `review` is non-empty. All numeric IDs are cast to `(int)` before use. No unvalidated user input reaches database queries or output. |
+| **Verification** | Submit empty, overly long, or malformed inputs to API endpoints; verify proper validation responses. |
+| **Status** | **Already Secure** |
+
+---
+
+### 10. HTTP Method Enforcement
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `api/submit_review.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | `api/submit_review.php` explicitly rejects non-POST requests with `$_SERVER['REQUEST_METHOD'] !== 'POST'`. This prevents GET-based state changes. Other state-changing endpoints (`cart.php`, `checkout.php`, `profile.php`, admin CRUD) also enforce POST via `$_SERVER['REQUEST_METHOD'] == 'POST'` checks. |
+| **Verification** | Send a GET request to `api/submit_review.php`; should return "Invalid request method". |
+| **Status** | **Already Secure** |
+
+---
+
+### 11. Receipt Endpoint Authorization and Data Exposure
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `admin/receipt.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Receipts are served only to authenticated admins (`isAdminLoggedIn()`). The endpoint accepts only `id` (integer order ID) and returns the base64 receipt blob with the correct `Content-Type` from the database. No customer can access receipts. No sensitive metadata beyond the receipt content is exposed. |
+| **Verification** | Access `admin/receipt.php?id=1` without admin session; should return 403. |
+| **Status** | **Already Secure** |
+
+---
+
+### 12. Router Does Not Restrict HTTP Methods
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `api/index.php` |
+| **Root Cause** | The router does not inspect or restrict HTTP methods. It includes the target file for any method (GET, POST, PUT, DELETE, etc.). Method enforcement is left to individual endpoints. |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | All endpoints in the project properly check `$_SERVER['REQUEST_METHOD']` where needed. The router's lack of method filtering does not create a vulnerability because no endpoint accidentally accepts an unintended method. However, if a new endpoint were added without method checks, the router would not catch it. |
+| **Verification** | Confirm all state-changing endpoints validate the request method. |
+| **Status** | **Requires Manual Verification** (consider adding method restrictions to router or establishing a convention that all new endpoints must validate methods) |
+
+---
+
+## Summary
+
+**2 confirmed API/endpoint vulnerabilities were identified and fixed.**
+
+| Category | Count | Status |
+|----------|-------|--------|
+| GET-based cart remove without CSRF | 1 | Fixed |
+| GET-based wishlist remove without CSRF | 1 | Fixed |
+| Admin GET deletes with CSRF in URL | 1 | Requires Manual Verification |
+| Router method restriction | 1 | Requires Manual Verification |
+| Public API endpoint security | 0 | Already Secure |
+| Authenticated endpoint IDOR | 0 | Already Secure |
+| Admin endpoint authorization | 0 | Already Secure |
+| Sensitive data exposure | 0 | Already Secure |
+| Input validation | 0 | Already Secure |
+| Receipt endpoint security | 0 | Already Secure |
+
+**Files Modified**
+
+| File | Changes |
+|------|---------|
+| `cart.php` | Removed legacy GET remove handler; cart removal now POST-only with CSRF |
+| `wishlist.php` | Removed legacy GET remove handler; wishlist removal now POST-only with CSRF |
+
+---
+
+## Recommendations
+
+1. **Convert admin GET deletes to POST**: Refactor `admin/customers.php`, `admin/categories.php`, `admin/reviews.php`, and `admin/users.php` to use POST forms with CSRF tokens instead of GET links with tokens in query strings. This eliminates token exposure in logs and Referer headers.
+2. **Add HTTP method restrictions to router**: Consider adding a configuration or convention that restricts which HTTP methods each endpoint accepts, reducing the risk of accidentally permissive endpoints.
+3. **Implement rate limiting on public APIs**: Add rate limiting to `search.php` and `api/get_reviews.php` to prevent abuse.
+4. **Add API versioning**: Consider adding `/api/v1/` prefix to API endpoints for future compatibility.
+5. **Document public vs. authenticated endpoints**: Maintain a clear registry of which endpoints are public, which require customer auth, and which require admin auth.
+
+---
+
 *End of Report*
