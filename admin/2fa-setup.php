@@ -5,33 +5,21 @@ require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/2fa.php';
 
 if (isAdminLoggedIn()) {
-    $admin_check = getAdminById($_SESSION['admin_id']);
-    if ($admin_check && empty($admin_check['totp_enabled'])) {
-        $admin = $admin_check;
-        $admin_id = $admin['id'];
-    } else {
+    $admin = getAdminById($_SESSION['admin_id']);
+    if (!$admin || !empty($admin['totp_enabled'])) {
         redirect('dashboard.php');
     }
-}
-
-if (!isAdmin2FAPending()) {
-    if (!$admin ?? false) {
+} elseif (isAdmin2FAPending()) {
+    $admin = getAdminById(getAdmin2FAUserId());
+    if (!$admin) {
+        clearAdmin2FASession();
         redirect('login.php');
     }
-}
-
-$error = '';
-$success = '';
-
-if (!$admin) {
-    $admin_id = getAdmin2FAUserId();
-    $admin = getAdminById($admin_id);
-}
-
-if (!$admin) {
-    clearAdmin2FASession();
+} else {
     redirect('login.php');
 }
+
+$admin_id = $admin['id'];
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['setup_2fa'])) {
     if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
@@ -61,6 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['setup_2fa'])) {
         }
     }
 }
+
+$error = '';
 
 if (empty($_SESSION['admin_2fa_secret'])) {
     $_SESSION['admin_2fa_secret'] = TwoFactorAuth::generateSecret();

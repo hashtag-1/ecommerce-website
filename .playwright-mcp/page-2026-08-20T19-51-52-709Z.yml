@@ -1,0 +1,182 @@
+- generic [ref=f64e2]:
+  - complementary [ref=f64e3]:
+    - heading " Seed2Greens" [level=2] [ref=f64e5]:
+      - generic [ref=f64e6]: 
+      - text: Seed2Greens
+    - list [ref=f64e7]:
+      - listitem [ref=f64e8]:
+        - link " Dashboard" [ref=f64e9] [cursor=pointer]:
+          - /url: dashboard.php
+          - generic [ref=f64e10]: 
+          - text: Dashboard
+      - listitem [ref=f64e11]:
+        - link " Orders" [ref=f64e12] [cursor=pointer]:
+          - /url: orders.php
+          - generic [ref=f64e13]: 
+          - text: Orders
+      - listitem [ref=f64e14]:
+        - link " Customers" [ref=f64e15] [cursor=pointer]:
+          - /url: customers.php
+          - generic [ref=f64e16]: 
+          - text: Customers
+      - listitem [ref=f64e17]:
+        - link " Products" [ref=f64e18] [cursor=pointer]:
+          - /url: products.php
+          - generic [ref=f64e19]: 
+          - text: Products
+      - listitem [ref=f64e20]:
+        - link " Categories" [ref=f64e21] [cursor=pointer]:
+          - /url: categories.php
+          - generic [ref=f64e22]: 
+          - text: Categories
+      - listitem [ref=f64e23]:
+        - link " Reviews" [ref=f64e24] [cursor=pointer]:
+          - /url: reviews.php
+          - generic [ref=f64e25]: 
+          - text: Reviews
+      - listitem [ref=f64e26]:
+        - link " Account Settings" [ref=f64e27] [cursor=pointer]:
+          - /url: settings.php
+          - generic [ref=f64e28]: 
+          - text: Account Settings
+      - listitem [ref=f64e29]:
+        - link " View Site" [ref=f64e30] [cursor=pointer]:
+          - /url: ../index.php
+          - generic [ref=f64e31]: 
+          - text: View Site
+      - listitem [ref=f64e32]:
+        - button " Logout" [ref=f64e34] [cursor=pointer]:
+          - generic [ref=f64e35]: 
+          - text: Logout
+  - generic [ref=f64e36]:
+    - banner [ref=f64e37]:
+      - generic [ref=f64e38]:
+        - text: 
+        - heading "Dashboard" [level=2] [ref=f64e39]
+      - generic [ref=f64e40]:
+        - generic [ref=f64e41]: Welcome, Sanskar Admin
+        - button "Logout" [ref=f64e43] [cursor=pointer]
+    - main [ref=f64e44]:
+      - generic [ref=f64e45]:
+        - link " 24 Total Products" [ref=f64e47] [cursor=pointer]:
+          - /url: products.php
+          - generic [ref=f64e48]: 
+          - generic [ref=f64e50]:
+            - heading "24" [level=3] [ref=f64e51]
+            - paragraph [ref=f64e52]: Total Products
+        - link " 3 Total Customers" [ref=f64e54] [cursor=pointer]:
+          - /url: customers.php
+          - generic [ref=f64e55]: 
+          - generic [ref=f64e57]:
+            - heading "3" [level=3] [ref=f64e58]
+            - paragraph [ref=f64e59]: Total Customers
+        - link " 3 Total Orders" [ref=f64e61] [cursor=pointer]:
+          - /url: orders.php
+          - generic [ref=f64e62]: 
+          - generic [ref=f64e64]:
+            - heading "3" [level=3] [ref=f64e65]
+            - paragraph [ref=f64e66]: Total Orders
+        - generic [ref=f64e67]:
+          - generic [ref=f64e68]: 
+          - generic [ref=f64e70]:
+            - heading "Rs. 1,920.00" [level=3] [ref=f64e71]
+            - paragraph [ref=f64e72]: Completed Revenue
+        - link " 1 Pending Orders" [ref=f64e74] [cursor=pointer]:
+          - /url: orders.php
+          - generic [ref=f64e75]: 
+          - generic [ref=f64e77]:
+            - heading "1" [level=3] [ref=f64e78]
+            - paragraph [ref=f64e79]: Pending Orders
+        - generic [ref=f64e80]:
+          - generic [ref=f64e81]: 
+          - generic [ref=f64e83]:
+            - heading "1" [level=3] [ref=f64e84]
+            - paragraph [ref=f64e85]: Processing
+        - generic [ref=f64e86]:
+          - generic [ref=f64e87]: 
+          - generic [ref=f64e89]:
+            - heading "0" [level=3] [ref=f64e90]
+            - paragraph [ref=f64e91]: Delivered
+      - generic [ref=f64e92]:
+        - generic [ref=f64e93]:
+          - heading "Recent Orders" [level=3] [ref=f64e94]
+          - table [ref=f64e95]:
+            - rowgroup [ref=f64e96]:
+              - row [ref=f64e97]:
+                - columnheader "Order ID" [ref=f64e98]
+                - columnheader "Customer" [ref=f64e99]
+                - columnheader "Amount" [ref=f64e100]
+                - columnheader "Status" [ref=f64e101]
+                - columnheader "Date" [ref=f64e102]
+                - columnheader "Action" [ref=f64e103]
+            - rowgroup [ref=f64e104]:
+              - row [ref=f64e105]:
+                - cell [ref=f64e106]:
+                  - strong [ref=f64e107]: "#0001"
+                - cell "Ramesh Sharma ramesh@example.com" [ref=f64e108]
+                - cell [ref=f64e109]:
+                  - strong [ref=f64e110]: Rs. 620.00
+                - cell "Pending" [ref=f64e111]
+                - cell "Aug 21, 2026" [ref=f64e113]
+                - cell [ref=f64e114]:
+                  - link "View" [ref=f64e115] [cursor=pointer]:
+                    - /url: order-details.php?id=1
+              - row [ref=f64e116]:
+                - cell [ref=f64e117]:
+                  - strong [ref=f64e118]: "#0002"
+                - cell "Ramesh Sharma ramesh@example.com" [ref=f64e119]
+                - cell [ref=f64e120]:
+                  - strong [ref=f64e121]: Rs. 850.00
+                - cell "Confirmed" [ref=f64e122]
+                - cell "Aug 21, 2026" [ref=f64e124]
+                - cell [ref=f64e125]:
+                  - link "View" [ref=f64e126] [cursor=pointer]:
+                    - /url: order-details.php?id=2
+              - row [ref=f64e127]:
+                - cell [ref=f64e128]:
+                  - strong [ref=f64e129]: "#0003"
+                - cell "Sita Thapa sita@example.com" [ref=f64e130]
+                - cell [ref=f64e131]:
+                  - strong [ref=f64e132]: Rs. 450.00
+                - cell "Processing" [ref=f64e133]
+                - cell "Aug 21, 2026" [ref=f64e135]
+                - cell [ref=f64e136]:
+                  - link "View" [ref=f64e137] [cursor=pointer]:
+                    - /url: order-details.php?id=3
+        - generic [ref=f64e138]:
+          - generic [ref=f64e139]:
+            - heading "Stock Alerts" [level=3] [ref=f64e140]
+            - paragraph [ref=f64e141]: All products are well stocked.
+          - generic [ref=f64e142]:
+            - heading "Recent Activity" [level=3] [ref=f64e143]
+            - list [ref=f64e144]:
+              - listitem [ref=f64e145]:
+                - generic [ref=f64e146]: 
+                - generic [ref=f64e148]:
+                  - strong [ref=f64e149]: "New order #0001 placed by Ramesh Sharma"
+                  - text: Just now
+              - listitem [ref=f64e150]:
+                - generic [ref=f64e151]: 
+                - generic [ref=f64e153]:
+                  - strong [ref=f64e154]: "New order #0002 placed by Ramesh Sharma"
+                  - text: Just now
+              - listitem [ref=f64e155]:
+                - generic [ref=f64e156]: 
+                - generic [ref=f64e158]:
+                  - strong [ref=f64e159]: "New order #0003 placed by Sita Thapa"
+                  - text: Just now
+              - listitem [ref=f64e160]:
+                - generic [ref=f64e161]: 
+                - generic [ref=f64e163]:
+                  - strong [ref=f64e164]: "New customer registered: Ramesh Sharma"
+                  - text: Just now
+              - listitem [ref=f64e165]:
+                - generic [ref=f64e166]: 
+                - generic [ref=f64e168]:
+                  - strong [ref=f64e169]: "New customer registered: Sita Thapa"
+                  - text: Just now
+              - listitem [ref=f64e170]:
+                - generic [ref=f64e171]: 
+                - generic [ref=f64e173]:
+                  - strong [ref=f64e174]: "New customer registered: Gopal Rai"
+                  - text: Just now

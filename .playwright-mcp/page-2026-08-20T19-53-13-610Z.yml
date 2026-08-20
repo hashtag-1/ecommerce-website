@@ -1,0 +1,47 @@
+- generic [ref=f3e2]:
+  - generic [ref=f3e3]:
+    - generic [ref=f3e4]:
+      - generic [ref=f3e5]: 
+      - heading "Enable Two-Factor Authentication" [level=1] [ref=f3e6]
+      - paragraph [ref=f3e7]: Secure your admin account with Google Authenticator
+    - text: "Warning: Undefined variable $error in C:\\xampp\\htdocs\\ecommerce-website\\admin\\2fa-setup.php on line 195"
+    - generic [ref=f3e8]:
+      - strong [ref=f3e9]: "Setup Instructions:"
+      - list [ref=f3e10]:
+        - listitem [ref=f3e11]: Install Google Authenticator on your phone
+        - listitem [ref=f3e12]: Scan the QR code or enter the secret key manually
+        - listitem [ref=f3e13]: Save your backup codes in a secure location
+        - listitem [ref=f3e14]: Enter the 6-digit code from the app to verify
+    - generic [ref=f3e15]:
+      - img "QR Code for Google Authenticator" [ref=f3e16]
+      - paragraph [ref=f3e17]:
+        - link "Can't scan? Open in Authenticator app" [ref=f3e18] [cursor=pointer]:
+          - /url: otpauth://totp/Seed2Greens:sanskar?secret=4QNJNK5P3BXKFXOHPPUM5WOGV66M6L3V&issuer=Seed2Greens&period=30&digits=6&algorithm=SHA1
+      - generic [ref=f3e19]: 4QNJNK5P3BXKFXOHPPUM5WOGV66M6L3V
+      - paragraph [ref=f3e20]: Manual entry key
+    - generic [ref=f3e21]:
+      - heading " Your Backup Codes" [level=4] [ref=f3e22]:
+        - generic [ref=f3e23]: 
+        - text: Your Backup Codes
+      - generic [ref=f3e24]:
+        - generic [ref=f3e25]: E1A9C0195F6EBC4F2207
+        - generic [ref=f3e26]: 1D7AC91F6048BCB8DD55
+        - generic [ref=f3e27]: 2E200EBCDD1F1C37129D
+        - generic [ref=f3e28]: 453EF4D63F8E749C9CE5
+        - generic [ref=f3e29]: 63EB67E39D0E36B90563
+        - generic [ref=f3e30]: 052F7E7E5267AE08377E
+        - generic [ref=f3e31]: 3B443EBFB6094BFEFA8B
+        - generic [ref=f3e32]: EE09D2B401E864F968B7
+        - generic [ref=f3e33]: 461A6AF1DAA0C57FFBBC
+        - generic [ref=f3e34]: 9933856E59E57EDBEF7E
+      - generic [ref=f3e35]:
+        - generic [ref=f3e36]: 
+        - text: Save these codes now. Each code can only be used once. You will not be able to see them again.
+    - generic [ref=f3e37]:
+      - generic [ref=f3e38]:
+        - generic [ref=f3e39]: Verification Code
+        - textbox "Verification Code" [active] [ref=f3e40]:
+          - /placeholder: Enter 6-digit code
+      - button "Enable 2FA" [ref=f3e41] [cursor=pointer]
+  - link "← Cancel" [ref=f3e43] [cursor=pointer]:
+    - /url: settings.php

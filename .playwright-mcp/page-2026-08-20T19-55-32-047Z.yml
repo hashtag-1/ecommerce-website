@@ -1,0 +1,46 @@
+- generic [ref=f3e2]:
+  - generic [ref=f3e3]:
+    - generic [ref=f3e4]:
+      - generic [ref=f3e5]: 
+      - heading "Enable Two-Factor Authentication" [level=1] [ref=f3e6]
+      - paragraph [ref=f3e7]: Secure your admin account with Google Authenticator
+    - generic [ref=f3e8]:
+      - strong [ref=f3e9]: "Setup Instructions:"
+      - list [ref=f3e10]:
+        - listitem [ref=f3e11]: Install Google Authenticator on your phone
+        - listitem [ref=f3e12]: Scan the QR code or enter the secret key manually
+        - listitem [ref=f3e13]: Save your backup codes in a secure location
+        - listitem [ref=f3e14]: Enter the 6-digit code from the app to verify
+    - generic [ref=f3e15]:
+      - img "QR Code for Google Authenticator" [ref=f3e16]
+      - paragraph [ref=f3e17]:
+        - link "Can't scan? Open in Authenticator app" [ref=f3e18] [cursor=pointer]:
+          - /url: otpauth://totp/Seed2Greens:sanskar?secret=PZVY6ZJROLWQIHRHMC6KLTWFGKD2FQMY&issuer=Seed2Greens&period=30&digits=6&algorithm=SHA1
+      - generic [ref=f3e19]: PZVY6ZJROLWQIHRHMC6KLTWFGKD2FQMY
+      - paragraph [ref=f3e20]: Manual entry key
+    - generic [ref=f3e21]:
+      - heading " Your Backup Codes" [level=4] [ref=f3e22]:
+        - generic [ref=f3e23]: 
+        - text: Your Backup Codes
+      - generic [ref=f3e24]:
+        - generic [ref=f3e25]: 50C2F141A1B6719EEA44
+        - generic [ref=f3e26]: 72B289F913260BF7ABAB
+        - generic [ref=f3e27]: FF6430F1FC95D1AC3D04
+        - generic [ref=f3e28]: 3849C3271F2C1CCE0B67
+        - generic [ref=f3e29]: 04695249290D9C6B16BF
+        - generic [ref=f3e30]: 85D051D74A13F39A09CD
+        - generic [ref=f3e31]: 093039C5909C923D1D48
+        - generic [ref=f3e32]: FA34FF848F1FE5EFDA6E
+        - generic [ref=f3e33]: 9799A795A9D2002ED73B
+        - generic [ref=f3e34]: D00A7FE258944E147933
+      - generic [ref=f3e35]:
+        - generic [ref=f3e36]: 
+        - text: Save these codes now. Each code can only be used once. You will not be able to see them again.
+    - generic [ref=f3e37]:
+      - generic [ref=f3e38]:
+        - generic [ref=f3e39]: Verification Code
+        - textbox "Verification Code" [active] [ref=f3e40]:
+          - /placeholder: Enter 6-digit code
+      - button "Enable 2FA" [ref=f3e41] [cursor=pointer]
+  - link "← Cancel" [ref=f3e43] [cursor=pointer]:
+    - /url: settings.php
