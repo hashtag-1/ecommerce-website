@@ -60,19 +60,11 @@ if (isLoggedIn()) {
                 </div>
                 
                 <?php if ($product['stock_quantity'] > 0): ?>
-                    <div class="product-quantity">
-                        <label>Quantity:</label>
-                        <div class="quantity-control">
-                            <button type="button" class="qty-minus">-</button>
-                            <input type="number" id="qtyInput" value="1" min="1" max="<?php echo $product['stock_quantity']; ?>" readonly>
-                            <button type="button" class="qty-plus">+</button>
-                        </div>
-                    </div>
                     
                     <div class="product-actions-large">
                         <form method="POST" action="cart.php" class="add-to-cart-form" style="flex: 1;">
                             <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                            <input type="hidden" name="quantity" id="cartQty" value="1">
+                            <input type="hidden" name="quantity" value="1">
                             <button type="submit" name="add_to_cart" class="btn btn-primary btn-lg add-to-cart-btn" style="width: 100%;">
                                 <i class="fas fa-shopping-cart"></i> Add to Cart
                             </button>
