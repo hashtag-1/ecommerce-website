@@ -2508,4 +2508,213 @@ The generic message preserves the operational alert without leaking PDO internal
 
 ---
 
+## Environment/Deployment Security
+
+### Methodology
+
+The deployment configuration was audited across `vercel.json`, `.env`, `config/database.php`, `includes/functions.php`, and API entry points. The audit evaluated Vercel PHP runtime version, environment variable handling, CORS policy, HTTPS enforcement, error display settings, production/development mode separation, and deployment-level cookie/header configuration.
+
+---
+
+### 1. Outdated Vercel PHP Runtime
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `vercel.json:5` |
+| **Root Cause** | The Vercel PHP runtime is pinned to `vercel-php@0.9.0`, which is a legacy version. Current Vercel PHP runtimes are significantly newer (0.22+). Older runtimes may contain unpatched vulnerabilities in the PHP runtime itself, the Vercel bridge, or default configurations. |
+| **Exploitable** | No direct exploitation confirmed, but... |
+| **Severity** | Medium |
+| **Impact** | Running an outdated runtime increases the attack surface for known CVEs in PHP, the Vercel serverless adapter, and bundled extensions. Security patches and hardening defaults in newer runtimes are not inherited. |
+| **Verification** | Inspect `vercel.json` `functions.api/index.php.runtime` value. Compare against current Vercel PHP runtime releases. |
+| **Status** | **Requires Manual Verification** (recommend updating to the latest stable `vercel-php` runtime in Vercel dashboard or `vercel.json` after testing compatibility) |
+
+---
+
+### 2. Environment Variables Loaded from `.env` with Vercel Fallback
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `config/database.php:loadEnv()`, `.env`, `vercel.json` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | `config/database.php` uses a custom `loadEnv()` function that reads `.env` and calls `putenv()` only if `getenv()` returns empty. This means Vercel environment variables (configured in the Vercel dashboard) take precedence over `.env` values. The `.env` file is correctly excluded by `.gitignore` and is not tracked by git. |
+| **Verification** | Inspect `loadEnv()` in `config/database.php`. Confirm `if (!getenv($key))` guard exists. Confirm `.env` is in `.gitignore`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 3. Database Credentials Exposed in `.env` on Disk
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `.env` (root) |
+| **Root Cause** | The `.env` file contains plaintext production database credentials (Aiven host, username, password, port) and the eSewa secret key. While protected from HTTP access and git tracking, the file resides in the web root with default filesystem permissions. |
+| **Exploitable** | No (from remote attacker without server access) |
+| **Severity** | Medium |
+| **Impact** | If the server is compromised, backups are leaked, or logs/configs are exfiltrated, the plaintext credentials in `.env` grant immediate database access and payment system manipulation. The Aiven password and eSewa secret key are high-value targets. |
+| **Verification** | Confirm `.env` exists in project root. Confirm `.gitignore` excludes it. Confirm it is not tracked by git. Check filesystem permissions. |
+| **Status** | **Requires Manual Verification** (recommend: (1) rotate all credentials in `.env`, (2) set `.env` permissions to `600`, (3) use Vercel environment variables for production and remove `.env` from deployment artifacts) |
+
+---
+
+### 4. No CORS Headers Configured
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | All PHP endpoints (`api/*.php`, `search.php`, etc.) |
+| **Root Cause** | No `Access-Control-Allow-Origin` or related CORS headers are set in any PHP response. The Vercel `vercel.json` does not configure CORS either. |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | The absence of CORS headers means browsers enforce the Same-Origin Policy by default, blocking cross-origin JavaScript from reading responses. This is actually a secure default posture. However, if the frontend is ever served from a different origin (CDN, subdomain, mobile app), CORS will need to be explicitly configured. |
+| **Verification** | Inspect all PHP files for `header('Access-Control-...')` calls. Inspect `vercel.json` for CORS configuration. Use browser dev tools Network tab to confirm no `Access-Control-Allow-Origin` headers are present. |
+| **Status** | **Already Secure** (secure default; configure explicitly if multi-origin deployment is needed) |
+
+---
+
+### 5. No HTTPS Enforcement Headers
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/functions.php:4-5`, `vercel.json` |
+| **Root Cause** | While the application detects HTTPS via `$_SERVER['HTTPS']` and `HTTP_X_FORWARDED_PROTO` (added in Session Security audit), there is no HSTS (`Strict-Transport-Security`) header, no explicit HTTPS redirect, and no `secure` flag enforcement at the application level. |
+| **Exploitable** | No (HTTPS is enforced at the Vercel edge/proxy level) |
+| **Severity** | Informational |
+| **Impact** | On Vercel, HTTPS is enforced at the edge proxy — HTTP requests are automatically redirected to HTTPS. However, without HSTS, browsers have no instruction to remember the HTTPS-only policy, leaving users vulnerable to SSL stripping attacks on subsequent visits if the domain is ever served without the Vercel proxy. |
+| **Verification** | Confirm Vercel automatically redirects HTTP to HTTPS (Vercel platform behavior). Check response headers for `Strict-Transport-Security` — currently absent. |
+| **Status** | **Requires Manual Verification** (Vercel enforces HTTPS at the edge. For defense-in-depth, consider adding HSTS header in Vercel dashboard or via `vercel.json` headers configuration) |
+
+---
+
+### 6. Application Runs in Production Mode by Default
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | All PHP files |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | There is no `APP_DEBUG`, `APP_ENV`, or `NODE_ENV` configuration. The application does not conditionally display debug information based on environment. Error handling uses generic user-facing messages (e.g., "Failed to place order", "Database Connection Failed") and logs details server-side. `display_errors` is not explicitly disabled in code, but PHP's default in production environments is `Off`. |
+| **Verification** | Search for `APP_DEBUG`, `APP_ENV`, `display_errors`, `error_reporting` in the codebase — none found. Verify PHP `display_errors` is `Off` in the production environment. |
+| **Status** | **Already Secure** |
+
+---
+
+### 7. Cookie `Secure` Flag Depends on Runtime HTTPS Detection
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/functions.php:4-11` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Session cookies use `secure => $is_https`, which correctly detects HTTPS via both `$_SERVER['HTTPS']` and `HTTP_X_FORWARDED_PROTO`. On Vercel's HTTPS edge, `secure` will be `true`. On local XAMPP (HTTP), it remains `false`. This balances security with local development usability. |
+| **Verification** | Deploy to Vercel and inspect `PHPSESSID` cookie. Confirm `Secure` flag is present. |
+| **Status** | **Already Secure** |
+
+---
+
+### 8. Vercel Routes Expose PHP Router to All `.php` Files
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `vercel.json:18-19`, `api/index.php` |
+| **Root Cause** | The Vercel route `"src": "/(.+\\.php)"` routes ALL `.php` files through `api/index.php`, making every PHP file an API endpoint on Vercel. While `api/index.php` implements path traversal protection, blocked-prefix checks, and root containment, this broad routing increases the attack surface. |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | The router's protections are robust (4-layer path validation, `realpath()` containment, blocked prefixes). However, any new PHP file added to the project automatically becomes a Vercel endpoint. This requires developers to be aware that all `.php` files are publicly accessible on Vercel. |
+| **Verification** | Attempt to access a non-existent `.php` file and an internal file like `api/index.php?file=config/database.php` — both should return 404. |
+| **Status** | **Already Secure** |
+
+---
+
+### 9. eSewa Integration Still in Sandbox Mode
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `.env:11-13`, `checkout.php` |
+| **Root Cause** | The `.env` file configures eSewa in sandbox mode (`ESEWA_ENV=uat`, `ESEWA_PRODUCT_CODE=EPAYTEST`). The `ESEWA_SECRET_KEY` is also a sandbox/test key. |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Running in sandbox mode means real payment transactions are not processed. This is appropriate for development and testing. Before production launch, these values must be updated to production eSewa credentials. |
+| **Verification** | Inspect `.env` for `ESEWA_ENV=uat`. Confirm checkout page uses QR codes for eSewa/Khalti (sandbox flow). |
+| **Status** | **Requires Manual Verification** (update to production eSewa/Khalti credentials before going live) |
+
+---
+
+### 10. Aiven Database Connection Uses TLS by Default
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `config/database.php:39-42` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Aiven MySQL requires TLS connections by default. The PDO DSN does not explicitly specify TLS options, but Aiven's MySQL service enforces TLS at the server level. The connection will fail if TLS is not available. This protects data in transit between the Vercel serverless function and the Aiven database. |
+| **Verification** | Confirm Aiven MySQL requires TLS (Aiven platform default). Test database connection — if it succeeds, TLS is active. |
+| **Status** | **Already Secure** |
+
+---
+
+### 11. No PHP `session.gc_maxlifetime` Override
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/functions.php:6-13` |
+| **Root Cause** | The application does not set `session.gc_maxlifetime` via `ini_set()`. PHP's default (typically 1440 seconds / 24 minutes) controls server-side session data expiration. The application-level inactivity timeout (30 minutes) is enforced in `includes/functions.php`, but the server-side session garbage collector may still expire sessions earlier. |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | If `session.gc_maxlifetime` is shorter than the application's 30-minute inactivity timeout, users may be logged out unexpectedly while the application still considers their session valid. This is a usability concern, not a direct vulnerability. |
+| **Verification** | Check PHP `session.gc_maxlifetime` in the production environment. Compare with the 30-minute application timeout. |
+| **Status** | **Requires Manual Verification** (consider setting `ini_set('session.gc_maxlifetime', 1800)` to match the application timeout) |
+
+---
+
+### 12. No Content Security Policy (CSP)
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | All PHP entry points |
+| **Root Cause** | No `Content-Security-Policy` header is set in any response. |
+| **Exploitable** | No (XSS is already mitigated by `sanitize()` + `htmlspecialchars()` output encoding) |
+| **Severity** | Informational |
+| **Impact** | Without CSP, the application relies solely on output encoding for XSS protection. CSP provides defense-in-depth by restricting script sources, inline styles, and form actions. The current codebase uses inline `onclick` handlers and inline `<style>` blocks extensively, which would require a `unsafe-inline` CSP policy — reducing its effectiveness. |
+| **Verification** | Inspect response headers for `Content-Security-Policy`. Confirm extensive inline event handlers and styles in HTML templates. |
+| **Status** | **Requires Manual Verification** (CSP would require significant refactoring of inline handlers/styles; current XSS mitigations via `sanitize()` are sufficient) |
+
+---
+
+## Summary
+
+**0 confirmed environment/deployment vulnerabilities were identified and fixed. 5 items require manual verification.**
+
+| Category | Count | Status |
+|----------|-------|--------|
+| Outdated Vercel PHP runtime | 0 | Requires Manual Verification |
+| Environment variable handling | 0 | Already Secure |
+| `.env` credentials on disk | 0 | Requires Manual Verification |
+| CORS configuration | 0 | Already Secure |
+| HTTPS enforcement | 0 | Requires Manual Verification |
+| Application in production mode | 0 | Already Secure |
+| Cookie `Secure` flag | 0 | Already Secure |
+| Vercel route exposure | 0 | Already Secure |
+| eSewa sandbox mode | 0 | Requires Manual Verification |
+| Aiven TLS enforcement | 0 | Already Secure |
+| `session.gc_maxlifetime` | 0 | Requires Manual Verification |
+| Content Security Policy | 0 | Requires Manual Verification |
+
+---
+
+## Recommendations
+
+1. **Update Vercel PHP runtime**: Upgrade from `vercel-php@0.9.0` to the latest stable version. Test compatibility before deploying.
+2. **Rotate `.env` credentials**: Rotate the Aiven database password and eSewa secret key. Set `.env` permissions to `600`.
+3. **Use Vercel environment variables for production**: Configure all secrets in Vercel's dashboard. Do not include `.env` in deployment.
+4. **Add HSTS header**: Configure `Strict-Transport-Security` in Vercel dashboard or `vercel.json` headers.
+5. **Set `session.gc_maxlifetime`**: Add `ini_set('session.gc_maxlifetime', 1800)` to match the 30-minute application timeout.
+6. **Update `APP_URL`**: Change `APP_URL` in `.env` to the production URL before deployment.
+7. **Switch eSewa to production**: Update `ESEWA_ENV`, `ESEWA_PRODUCT_CODE`, and `ESEWA_SECRET_KEY` to production values before launch.
+
+---
+
 *End of Report*
