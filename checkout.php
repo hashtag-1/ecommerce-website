@@ -55,9 +55,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
                 } elseif ($file['size'] > $max_size) {
                     $error = 'File size exceeds 5MB limit.';
                 } else {
-                    $receipt_mime = $mime_type;
-                    $receipt_type = ($mime_type === 'application/pdf') ? 'pdf' : 'image';
-                    $receipt_data = base64_encode(file_get_contents($file['tmp_name']));
+                    $content = file_get_contents($file['tmp_name']);
+                    if ($content === false) {
+                        $error = 'Failed to read uploaded file.';
+                    } else {
+                        $receipt_mime = $mime_type;
+                        $receipt_type = ($mime_type === 'application/pdf') ? 'pdf' : 'image';
+                        $receipt_data = base64_encode($content);
+                    }
                 }
             }
         }

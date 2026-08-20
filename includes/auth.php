@@ -158,19 +158,15 @@ function placeOrder($user_id, $customer_name, $customer_email, $customer_phone, 
         $stmt = $db->query("SHOW COLUMNS FROM orders LIKE 'receipt_data'");
         $hasReceiptColumns = (bool)$stmt->fetch();
         
-        if ($hasReceiptColumns) {
-            $stmt = $db->prepare("
-                INSERT INTO orders (user_id, customer_name, customer_email, customer_phone, customer_address, total_amount, delivery_fee, payment_method, receipt_data, receipt_mime, receipt_type)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ");
-            $stmt->execute([$user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $total_amount, $delivery_fee, $payment_method, $receipt_data, $receipt_mime, $receipt_type]);
-        } else {
-            $stmt = $db->prepare("
-                INSERT INTO orders (user_id, customer_name, customer_email, customer_phone, customer_address, total_amount, delivery_fee, payment_method)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ");
-            $stmt->execute([$user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $total_amount, $delivery_fee, $payment_method]);
+        if (!$hasReceiptColumns) {
+            $db->exec("ALTER TABLE orders ADD COLUMN receipt_data MEDIUMTEXT DEFAULT NULL, ADD COLUMN receipt_mime VARCHAR(100) DEFAULT NULL, ADD COLUMN receipt_type ENUM('image', 'pdf') DEFAULT NULL");
         }
+        
+        $stmt = $db->prepare("
+            INSERT INTO orders (user_id, customer_name, customer_email, customer_phone, customer_address, total_amount, delivery_fee, payment_method, receipt_data, receipt_mime, receipt_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        $stmt->execute([$user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $total_amount, $delivery_fee, $payment_method, $receipt_data, $receipt_mime, $receipt_type]);
         
         $order_id = $db->lastInsertId();
         
