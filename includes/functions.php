@@ -18,6 +18,15 @@ if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > 
     session_destroy();
 }
 $_SESSION['last_activity'] = time();
+
+header('X-Content-Type-Options: nosniff');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+header('Permissions-Policy: geolocation=(), microphone=(), camera=()');
+header('X-Frame-Options: SAMEORIGIN');
+if ($is_https) {
+    header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+}
+
 require_once __DIR__ . '/../config/database.php';
 
 // Get database instance
