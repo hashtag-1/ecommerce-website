@@ -3562,4 +3562,152 @@ The cooldown is enforced at the start of `placeOrder()`, before the transaction 
 
 ---
 
+## Dependency Security
+
+### Methodology
+
+The project was inspected for package manifests (`composer.json`, `composer.lock`, `package.json`, `package-lock.json`) and external dependencies loaded via CDN or runtime configuration. All discovered dependencies were cross-referenced against known CVE databases and vendor security advisories. No package manager manifests were found; dependencies are loaded directly from CDNs or provided by the Vercel runtime.
+
+---
+
+### 1. No Managed PHP Dependencies (Composer)
+
+| Field | Detail |
+|-------|--------|
+| **Package** | PHP libraries (Composer) |
+| **Current Version** | N/A — no `composer.json` or `composer.lock` present |
+| **Known Vulnerability** | None |
+| **Severity** | Informational |
+| **Impact** | The project does not use Composer for dependency management. All database access is through built-in PDO (`pdo_mysql`), and no third-party PHP libraries are loaded. This eliminates supply-chain risk from PHP packages but also means security patches for any custom code must be applied manually. |
+| **Verification** | Confirm absence of `composer.json` and `vendor/` directory. Inspect `require_once` calls — all point to local `includes/` files. |
+| **Status** | **Already Secure** (no managed dependencies to audit) |
+
+---
+
+### 2. No Managed JavaScript Dependencies (npm)
+
+| Field | Detail |
+|-------|--------|
+| **Package** | JavaScript libraries (npm) |
+| **Current Version** | N/A — no `package.json` or `package-lock.json` present |
+| **Known Vulnerability** | None |
+| **Severity** | Informational |
+| **Impact** | The project does not use npm for frontend dependencies. JavaScript consists of two custom files (`assets/js/script.js`, `assets/js/nav.js`) with no external library imports. |
+| **Verification** | Confirm absence of `package.json` and `node_modules/`. Inspect `<script>` tags in `includes/header.php` and `includes/footer.php` — only jQuery and custom scripts are loaded. |
+| **Status** | **Already Secure** (no managed dependencies to audit) |
+
+---
+
+### 3. Font Awesome 6.4.0
+
+| Field | Detail |
+|-------|--------|
+| **Package** | Font Awesome Free |
+| **Current Version** | 6.4.0 (loaded from `cdnjs.cloudflare.com`) |
+| **Known Vulnerability** | None — Sonatype, Snyk, and GitHub Security Advisories report no known vulnerabilities for 6.4.0 |
+| **Severity** | Low |
+| **Impact** | Font Awesome 6.4.0 is approximately 2+ years old (current latest is 6.6.0). While no CVEs are published for this version, running an outdated frontend library increases exposure to undiscovered vulnerabilities and supply-chain risks (e.g., CDN compromise, build provenance issues). The library is loaded from a third-party CDN (cdnjs), which adds a network-level attack surface. |
+| **Reachable** | Yes — loaded on every page via `<link rel="stylesheet">` in `includes/header.php` and all admin pages. However, the library is CSS-only (no JS execution), which limits XSS risk. |
+| **Recommended Action** | Upgrade to the latest 6.x version (6.6.0) to receive security patches and bug fixes. Before upgrading, test for CSS class name changes or rendering differences. Alternatively, self-host the CSS file to eliminate CDN dependency. |
+| **Fix Applied** | **None** — upgrading from 6.4.0 to 6.6.0 is a minor version bump but requires visual regression testing. Not applied in this audit to avoid breaking changes without testing. |
+| **Status** | **Requires Manual Verification** (no known CVEs, but version is outdated; schedule upgrade with testing) |
+
+---
+
+### 4. jQuery 3.6.0
+
+| Field | Detail |
+|-------|--------|
+| **Package** | jQuery |
+| **Current Version** | 3.6.0 (loaded from `cdnjs.cloudflare.com` in `includes/footer.php:83`) |
+| **Known Vulnerability** | None — no CVEs published against jQuery core 3.6.0. The last core security fixes were CVE-2020-11022 and CVE-2020-11023, both resolved in 3.5.0. jQuery 3.6.1–3.6.4 were bug-fix releases only. |
+| **Severity** | Low |
+| **Impact** | jQuery 3.6.0 is approximately 4+ years old (current latest is 3.7.1). While no core vulnerabilities are known, the project may be exposed to: (1) undiscovered vulnerabilities in the old codebase, (2) supply-chain risk from CDN delivery, (3) compatibility issues with modern browsers. The project uses jQuery for DOM manipulation, AJAX (`$.ajax`), and form handling in `assets/js/script.js` and `assets/js/nav.js`. |
+| **Reachable** | Yes — loaded on every page via `<script src="...jquery.min.js">` in `includes/footer.php`. However, the project does not pass untrusted HTML into jQuery DOM methods (`.html()`, `.append()`), which was the vector for the 3.5.0 XSS fixes. |
+| **Recommended Action** | Upgrade to jQuery 3.7.1 (latest 3.x). This is a low-risk drop-in replacement for most applications. Before upgrading, test: (1) AJAX form submissions in `script.js`, (2) navigation logic in `nav.js`, (3) any hover/dropdown behavior. Consider adding Subresource Integrity (SRI) hashes to CDN URLs. |
+| **Fix Applied** | **None** — upgrading from 3.6.0 to 3.7.1 requires functional testing of AJAX and navigation features. Not applied in this audit to avoid untested changes. |
+| **Status** | **Requires Manual Verification** (no known CVEs, but version is outdated; schedule upgrade with testing) |
+
+---
+
+### 5. Vercel PHP Runtime 0.9.0
+
+| Field | Detail |
+|-------|--------|
+| **Package** | Vercel PHP Runtime (`vercel-php`) |
+| **Current Version** | 0.9.0 (configured in `vercel.json:5`) |
+| **Known Vulnerability** | None identified for this specific version |
+| **Severity** | Informational |
+| **Impact** | `vercel-php@0.9.0` is actually the **latest stable release** as of January 2026, supporting PHP 8.5.x. The runtime is actively maintained by the Vercel community (`vercel-community/php`). It bundles PHP with common extensions and receives regular updates for security patches in the underlying PHP binaries and system libraries. |
+| **Reachable** | N/A — this is the serverless runtime environment, not a client-side dependency. |
+| **Recommended Action** | No action required. Continue monitoring Vercel runtime releases and update when new versions are published. Ensure Vercel environment variables are used for secrets rather than `.env` files in production. |
+| **Fix Applied** | **None** — version is current. |
+| **Status** | **Already Secure** |
+
+---
+
+### 6. CDN Delivery Without Subresource Integrity (SRI)
+
+| Field | Detail |
+|-------|--------|
+| **Package** | Font Awesome 6.4.0, jQuery 3.6.0 |
+| **Current Version** | Loaded from `cdnjs.cloudflare.com` without SRI hashes |
+| **Known Vulnerability** | None directly, but CDN compromise is a known supply-chain attack vector |
+| **Severity** | Low |
+| **Impact** | Both Font Awesome and jQuery are loaded from cdnjs.cloudflare.com without `integrity` or `crossorigin` attributes. If the CDN is compromised or a man-in-the-middle attack occurs, malicious JavaScript/CSS could be injected into the page. This is a defense-in-depth concern, especially for jQuery which executes JavaScript. |
+| **Verification** | Inspect `<link>` and `<script>` tags in `includes/header.php` and `includes/footer.php`. Confirm no `integrity` attributes are present. |
+| **Recommended Action** | Add Subresource Integrity (SRI) hashes to all CDN-loaded assets:
+```html
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-..." crossorigin="anonymous"></script>
+```
+Generate hashes using `openssl` or online tools after pinning exact versions. |
+| **Fix Applied** | **None** — SRI hashes require exact version pinning and hash generation. Not applied in this audit. |
+| **Status** | **Requires Manual Verification** (recommend adding SRI hashes as a defense-in-depth measure) |
+
+---
+
+### 7. No Dependency Locking or Integrity Verification
+
+| Field | Detail |
+|-------|--------|
+| **Package** | All dependencies |
+| **Current Version** | N/A |
+| **Known Vulnerability** | N/A |
+| **Severity** | Informational |
+| **Impact** | Without `composer.lock` or `package-lock.json`, there is no mechanism to ensure consistent dependency versions across development, staging, and production. For CDN dependencies, there is no local lock file at all — versions are determined by the CDN URL at deploy time. |
+| **Verification** | Confirm absence of `composer.lock`, `package-lock.json`, and any other lock files. |
+| **Recommended Action** | Consider adding Composer for PHP dependency management if third-party libraries are ever needed. For frontend assets, consider self-hosting critical libraries or using a build tool with lockfile support. |
+| **Fix Applied** | **None** — this is an architectural observation, not a vulnerability. |
+| **Status** | **Requires Manual Verification** (no immediate action required) |
+
+---
+
+## Summary
+
+**0 confirmed dependency vulnerabilities were identified. 4 items require manual verification.**
+
+| Category | Count | Status |
+|----------|-------|--------|
+| PHP Composer dependencies | 0 | Already Secure |
+| JavaScript npm dependencies | 0 | Already Secure |
+| Font Awesome 6.4.0 outdated | 0 | Requires Manual Verification |
+| jQuery 3.6.0 outdated | 0 | Requires Manual Verification |
+| Vercel PHP runtime version | 0 | Already Secure |
+| CDN delivery without SRI | 0 | Requires Manual Verification |
+| No dependency locking | 0 | Requires Manual Verification |
+
+---
+
+## Recommendations
+
+1. **Upgrade Font Awesome to 6.6.0**: Pin the exact version and test for CSS/rendering regressions. Consider self-hosting to eliminate CDN dependency.
+2. **Upgrade jQuery to 3.7.1**: Pin the exact version and test AJAX/navigation functionality. Add SRI hash.
+3. **Add Subresource Integrity hashes**: Generate and add `integrity` and `crossorigin` attributes to all CDN-loaded assets.
+4. **Pin exact CDN versions**: Ensure `header.php` and `footer.php` reference exact versions (not `@latest` or missing versions).
+5. **Monitor Vercel runtime updates**: Subscribe to `vercel-community/php` releases to stay current with PHP security patches.
+6. **Consider a frontend build process**: For better dependency management, consider adding a simple build step (e.g., Vite, esbuild) that bundles and hashes frontend assets.
+
+---
+
 *End of Report*
