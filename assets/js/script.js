@@ -1,16 +1,20 @@
 // Seed2Greens - JavaScript Functions
 
-document.addEventListener('DOMContentLoaded', function() {
-    
+// Global (header) bindings — run ONCE because the navbar/header persist
+// across AJAX navigations. Guarded so they are never double-bound.
+function initGlobalOnce() {
+    if (window.__s2gGlobalBound) return;
+    window.__s2gGlobalBound = true;
+
     // === Mobile Menu Toggle ===
     const hamburger = document.getElementById('hamburger');
     const navMenu = document.getElementById('navMenu');
-    
+
     if (hamburger && navMenu) {
         hamburger.addEventListener('click', function() {
             navMenu.classList.toggle('active');
         });
-        
+
         // Close menu when clicking outside
         document.addEventListener('click', function(e) {
             if (!hamburger.contains(e.target) && !navMenu.contains(e.target)) {
@@ -18,10 +22,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+
     // === Mobile Dropdown Toggle ===
     const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
-    
+
     dropdownToggles.forEach(function(toggle) {
         toggle.addEventListener('click', function(e) {
             if (window.innerWidth <= 768) {
@@ -30,7 +34,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-    
+}
+
+// Page-content bindings — run on every navigation (initial load + AJAX swaps)
+// so that sliders, add-to-cart, forms, FAQ, etc. keep working after the
+// <main> content is replaced.
+function initContent() {
+    initGlobalOnce();
+
     // === Quantity Controls ===
     const quantityInputs = document.querySelectorAll('.quantity-control input:not(.cart-quantity-input)');
     
@@ -479,38 +490,47 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // === Smooth scroll for anchor links ===
-    document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
-        anchor.addEventListener('click', function(e) {
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                e.preventDefault();
-                target.scrollIntoView({ behavior: 'smooth' });
-            }
-        });
-    });
-    
-    // === Search input live filter (client-side only) ===
-    const searchInput = document.getElementById('searchInput');
-    
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            const term = this.value.toLowerCase();
-            const productCards = document.querySelectorAll('.product-card');
-            
-            productCards.forEach(function(card) {
-                const name = card.querySelector('h3')?.textContent.toLowerCase() || '';
-                const desc = card.querySelector('p')?.textContent.toLowerCase() || '';
-                
-                if (name.includes(term) || desc.includes(term)) {
-                    card.style.display = 'flex';
-                } else {
-                    card.style.display = 'none';
+    if (!window.__s2gScrollBound) {
+        window.__s2gScrollBound = true;
+        document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+            anchor.addEventListener('click', function(e) {
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    e.preventDefault();
+                    target.scrollIntoView({ behavior: 'smooth' });
                 }
             });
         });
     }
-    
-});
+
+    // === Search input live filter (client-side only) ===
+    if (!window.__s2gSearchBound) {
+        window.__s2gSearchBound = true;
+        const searchInput = document.getElementById('searchInput');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const term = this.value.toLowerCase();
+                const productCards = document.querySelectorAll('.product-card');
+
+                productCards.forEach(function(card) {
+                    const name = card.querySelector('h3')?.textContent.toLowerCase() || '';
+                    const desc = card.querySelector('p')?.textContent.toLowerCase() || '';
+
+                    if (name.includes(term) || desc.includes(term)) {
+                        card.style.display = 'flex';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        }
+    }
+
+    // Re-initialize page-specific widgets inside the (new) content.
+    if (typeof initReviewsCarousel === 'function') initReviewsCarousel();
+    if (typeof initFaqAccordion === 'function') initFaqAccordion();
+}
 
 // ============================================
 // Kathmandu Live Time + Weather
@@ -935,9 +955,9 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============================================
 // Seed2Greens - FAQ Accordion
 // ============================================
-(function() {
+function initFaqAccordion() {
     const toggleBtn = document.getElementById('faqToggleBtn');
-    const hiddenItems = document.querySelectorAll('.faq-hidden');
+    let hiddenItems = document.querySelectorAll('.faq-hidden');
     const allQuestions = document.querySelectorAll('.faq-question');
 
     function toggleAnswer(button) {
@@ -1006,7 +1026,7 @@ document.addEventListener('DOMContentLoaded', function() {
             toggleAnswer(button);
         });
     });
-})();
+}
 
 // ============================================
 // Seed2Greens - Search Functionality
@@ -1179,7 +1199,14 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============================================
 // Seed2Greens - Customer Reviews
 // ============================================
-(function() {
+function initReviewsCarousel() {
+    // Stop any previous carousel animation loop (e.g. from a previous
+    // AJAX navigation to the homepage) to avoid leaking rAF loops.
+    if (window.__s2gReviewAnimId) {
+        cancelAnimationFrame(window.__s2gReviewAnimId);
+        window.__s2gReviewAnimId = null;
+    }
+
     const track = document.getElementById('reviewsTrack');
     const modalOverlay = document.getElementById('reviewModalOverlay');
     const openModalBtn = document.getElementById('openReviewModal');
@@ -1189,6 +1216,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const reviewText = document.getElementById('reviewText');
     const starsInput = document.getElementById('reviewStarsInput');
     const starButtons = starsInput ? starsInput.querySelectorAll('.review-star') : [];
+
+    // The reviews widget (track + modal + form) only exists on the homepage.
+    // Skip entirely on other pages so we don't bind to non-existent elements
+    // when this is re-run after an AJAX navigation.
+    if (!track && !reviewForm) return;
 
     let selectedRating = 0;
 
@@ -1347,8 +1379,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function startCarouselAnimation() {
-        if (carouselAnimationId) {
-            cancelAnimationFrame(carouselAnimationId);
+        if (window.__s2gReviewAnimId) {
+            cancelAnimationFrame(window.__s2gReviewAnimId);
+            window.__s2gReviewAnimId = null;
         }
         currentTranslate = 0;
         cardWidth = getCardWidth();
@@ -1360,7 +1393,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function animateCarousel(timestamp) {
-        if (!track) return;
+        if (!track || !track.isConnected) {
+            window.__s2gReviewAnimId = null;
+            return;
+        }
 
         const delta = timestamp - lastTime;
         lastTime = timestamp;
@@ -1378,6 +1414,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         carouselAnimationId = requestAnimationFrame(animateCarousel);
+        window.__s2gReviewAnimId = carouselAnimationId;
     }
 
     const carousel = document.getElementById('reviewsCarousel');
@@ -1525,11 +1562,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && modalOverlay && modalOverlay.classList.contains('active')) {
-            closeModal();
-        }
-    });
+    if (!window.__s2gReviewKeyBound) {
+        window.__s2gReviewKeyBound = true;
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modalOverlay && modalOverlay.classList.contains('active')) {
+                closeModal();
+            }
+        });
+    }
 
     starButtons.forEach(function(btn) {
         btn.addEventListener('click', function() {
@@ -1597,4 +1637,18 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         initReviews();
     }
-})();
+}
+
+// ============================================
+// Seed2Greens - Bootstrapping
+// ============================================
+// Run content bindings on the initial page load and expose them so the
+// AJAX navigation layer (nav.js) can re-run them after swapping content.
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initContent);
+} else {
+    initContent();
+}
+
+window.Seed2Greens = window.Seed2Greens || {};
+window.Seed2Greens.initContent = initContent;
