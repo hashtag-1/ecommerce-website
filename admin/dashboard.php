@@ -59,27 +59,33 @@ $recent_activity = getRecentActivity(8);
             <main class="admin-content">
                 <div class="stats-grid">
                     <div class="stat-card">
+                        <a href="products.php">
                         <div class="stat-icon products"><i class="fas fa-box"></i></div>
                         <div class="stat-info">
                             <h3><?php echo $stats['total_products']; ?></h3>
                             <p>Total Products</p>
                         </div>
+                        </a>
                     </div>
                     
                     <div class="stat-card">
+                        <a href="customers.php">
                         <div class="stat-icon users"><i class="fas fa-users"></i></div>
                         <div class="stat-info">
                             <h3><?php echo $stats['total_customers']; ?></h3>
                             <p>Total Customers</p>
                         </div>
+                        </a>
                     </div>
                     
                     <div class="stat-card">
+                        <a href="orders.php">
                         <div class="stat-icon orders"><i class="fas fa-shopping-bag"></i></div>
                         <div class="stat-info">
                             <h3><?php echo $stats['total_orders']; ?></h3>
                             <p>Total Orders</p>
                         </div>
+                        </a>
                     </div>
                     
                     <div class="stat-card">
@@ -91,11 +97,13 @@ $recent_activity = getRecentActivity(8);
                     </div>
 
                     <div class="stat-card">
+                        <a href="orders.php">
                         <div class="stat-icon" style="background: #fff3e0; color: #e65100;"><i class="fas fa-clock"></i></div>
                         <div class="stat-info">
                             <h3><?php echo $stats['pending_orders']; ?></h3>
                             <p>Pending Orders</p>
                         </div>
+                        </a>
                     </div>
 
                     <div class="stat-card">
