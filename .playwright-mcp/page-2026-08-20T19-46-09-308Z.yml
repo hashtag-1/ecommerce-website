@@ -1,0 +1,98 @@
+- generic [ref=f59e2]:
+  - complementary [ref=f59e3]:
+    - heading " Seed2Greens" [level=2] [ref=f59e5]:
+      - generic [ref=f59e6]: 
+      - text: Seed2Greens
+    - list [ref=f59e7]:
+      - listitem [ref=f59e8]:
+        - link " Dashboard" [ref=f59e9] [cursor=pointer]:
+          - /url: dashboard.php
+          - generic [ref=f59e10]: 
+          - text: Dashboard
+      - listitem [ref=f59e11]:
+        - link " Orders" [ref=f59e12] [cursor=pointer]:
+          - /url: orders.php
+          - generic [ref=f59e13]: 
+          - text: Orders
+      - listitem [ref=f59e14]:
+        - link " Customers" [ref=f59e15] [cursor=pointer]:
+          - /url: customers.php
+          - generic [ref=f59e16]: 
+          - text: Customers
+      - listitem [ref=f59e17]:
+        - link " Products" [ref=f59e18] [cursor=pointer]:
+          - /url: products.php
+          - generic [ref=f59e19]: 
+          - text: Products
+      - listitem [ref=f59e20]:
+        - link " Categories" [ref=f59e21] [cursor=pointer]:
+          - /url: categories.php
+          - generic [ref=f59e22]: 
+          - text: Categories
+      - listitem [ref=f59e23]:
+        - link " Reviews" [ref=f59e24] [cursor=pointer]:
+          - /url: reviews.php
+          - generic [ref=f59e25]: 
+          - text: Reviews
+      - listitem [ref=f59e26]:
+        - link " Account Settings" [ref=f59e27] [cursor=pointer]:
+          - /url: settings.php
+          - generic [ref=f59e28]: 
+          - text: Account Settings
+      - listitem [ref=f59e29]:
+        - link " View Site" [ref=f59e30] [cursor=pointer]:
+          - /url: ../index.php
+          - generic [ref=f59e31]: 
+          - text: View Site
+      - listitem [ref=f59e32]:
+        - button " Logout" [ref=f59e34] [cursor=pointer]:
+          - generic [ref=f59e35]: 
+          - text: Logout
+  - generic [ref=f59e36]:
+    - banner [ref=f59e37]:
+      - generic [ref=f59e38]:
+        - text: 
+        - heading "Account Settings" [level=2] [ref=f59e39]
+      - generic [ref=f59e40]:
+        - generic [ref=f59e41]: Welcome, Sanskar Admin
+        - button "Logout" [ref=f59e43] [cursor=pointer]
+    - main [ref=f59e44]:
+      - generic [ref=f59e45]: Two-factor authentication has been disabled.
+      - generic [ref=f59e46]:
+        - heading "Change Username & Password" [level=3] [ref=f59e47]
+        - paragraph [ref=f59e48]: Enter your current password, then update your username, password, or both.
+        - generic [ref=f59e49]:
+          - generic [ref=f59e50]:
+            - generic [ref=f59e51]: Current Password *
+            - textbox "Current Password *" [ref=f59e52]:
+              - /placeholder: Enter current password
+          - generic [ref=f59e53]:
+            - generic [ref=f59e54]: New Username
+            - textbox "New Username" [ref=f59e55]:
+              - /placeholder: Enter new username
+              - text: sanskar
+          - generic [ref=f59e56]:
+            - generic [ref=f59e57]:
+              - generic [ref=f59e58]: New Password
+              - textbox "New Password" [ref=f59e59]:
+                - /placeholder: Leave blank to keep current
+            - generic [ref=f59e60]:
+              - generic [ref=f59e61]: Confirm New Password
+              - textbox "Confirm New Password" [ref=f59e62]:
+                - /placeholder: Confirm new password
+          - button " Update Credentials" [ref=f59e63] [cursor=pointer]:
+            - generic [ref=f59e64]: 
+            - text: Update Credentials
+      - generic [ref=f59e65]:
+        - heading " Two-Factor Authentication" [level=3] [ref=f59e66]:
+          - generic [ref=f59e67]: 
+          - text: Two-Factor Authentication
+        - generic [ref=f59e68]:
+          - generic [ref=f59e69]: 
+          - text: Two-factor authentication is
+          - strong [ref=f59e70]: not enabled
+          - text: .
+        - paragraph [ref=f59e71]: Protect your admin account with Google Authenticator. You will need an authenticator app on your phone.
+        - button " Enable Two-Factor Authentication" [ref=f59e73] [cursor=pointer]:
+          - generic [ref=f59e74]: 
+          - text: Enable Two-Factor Authentication

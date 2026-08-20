@@ -1,0 +1,116 @@
+- generic [ref=f24e2]:
+  - complementary [ref=f24e3]:
+    - heading " Seed2Greens" [level=2] [ref=f24e5]:
+      - generic [ref=f24e6]: 
+      - text: Seed2Greens
+    - list [ref=f24e7]:
+      - listitem [ref=f24e8]:
+        - link " Dashboard" [ref=f24e9] [cursor=pointer]:
+          - /url: dashboard.php
+          - generic [ref=f24e10]: 
+          - text: Dashboard
+      - listitem [ref=f24e11]:
+        - link " Orders" [ref=f24e12] [cursor=pointer]:
+          - /url: orders.php
+          - generic [ref=f24e13]: 
+          - text: Orders
+      - listitem [ref=f24e14]:
+        - link " Customers" [ref=f24e15] [cursor=pointer]:
+          - /url: customers.php
+          - generic [ref=f24e16]: 
+          - text: Customers
+      - listitem [ref=f24e17]:
+        - link " Products" [ref=f24e18] [cursor=pointer]:
+          - /url: products.php
+          - generic [ref=f24e19]: 
+          - text: Products
+      - listitem [ref=f24e20]:
+        - link " Categories" [ref=f24e21] [cursor=pointer]:
+          - /url: categories.php
+          - generic [ref=f24e22]: 
+          - text: Categories
+      - listitem [ref=f24e23]:
+        - link " Reviews" [ref=f24e24] [cursor=pointer]:
+          - /url: reviews.php
+          - generic [ref=f24e25]: 
+          - text: Reviews
+      - listitem [ref=f24e26]:
+        - link " Account Settings" [ref=f24e27] [cursor=pointer]:
+          - /url: settings.php
+          - generic [ref=f24e28]: 
+          - text: Account Settings
+      - listitem [ref=f24e29]:
+        - link " View Site" [ref=f24e30] [cursor=pointer]:
+          - /url: ../index.php
+          - generic [ref=f24e31]: 
+          - text: View Site
+      - listitem [ref=f24e32]:
+        - button " Logout" [ref=f24e34] [cursor=pointer]:
+          - generic [ref=f24e35]: 
+          - text: Logout
+  - generic [ref=f24e36]:
+    - banner [ref=f24e37]:
+      - generic [ref=f24e38]:
+        - text: 
+        - heading "Account Settings" [level=2] [ref=f24e39]
+      - generic [ref=f24e40]:
+        - generic [ref=f24e41]: Welcome, Admin User
+        - button "Logout" [ref=f24e43] [cursor=pointer]
+    - main [ref=f24e44]:
+      - generic [ref=f24e45]: Two-factor authentication has been enabled successfully.
+      - generic [ref=f24e46]:
+        - heading "Change Username & Password" [level=3] [ref=f24e47]
+        - paragraph [ref=f24e48]: Enter your current password, then update your username, password, or both.
+        - generic [ref=f24e49]:
+          - generic [ref=f24e50]:
+            - generic [ref=f24e51]: Current Password *
+            - textbox "Current Password *" [ref=f24e52]:
+              - /placeholder: Enter current password
+          - generic [ref=f24e53]:
+            - generic [ref=f24e54]: New Username
+            - textbox "New Username" [ref=f24e55]:
+              - /placeholder: Enter new username
+              - text: admin
+          - generic [ref=f24e56]:
+            - generic [ref=f24e57]:
+              - generic [ref=f24e58]: New Password
+              - textbox "New Password" [ref=f24e59]:
+                - /placeholder: Leave blank to keep current
+            - generic [ref=f24e60]:
+              - generic [ref=f24e61]: Confirm New Password
+              - textbox "Confirm New Password" [ref=f24e62]:
+                - /placeholder: Confirm new password
+          - button " Update Credentials" [ref=f24e63] [cursor=pointer]:
+            - generic [ref=f24e64]: 
+            - text: Update Credentials
+      - generic [ref=f24e65]:
+        - heading " Two-Factor Authentication" [level=3] [ref=f24e66]:
+          - generic [ref=f24e67]: 
+          - text: Two-Factor Authentication
+        - generic [ref=f24e68]:
+          - generic [ref=f24e69]: 
+          - text: Two-factor authentication is
+          - strong [ref=f24e70]: enabled
+          - text: .
+        - paragraph [ref=f24e71]:
+          - text: "Backup codes remaining:"
+          - strong [ref=f24e72]: "10"
+        - generic [ref=f24e73]:
+          - heading "Disable Two-Factor Authentication" [level=4] [ref=f24e74]
+          - paragraph [ref=f24e75]: Enter your current password and an authentication code to disable 2FA.
+          - generic [ref=f24e76]:
+            - generic [ref=f24e77]: Current Password *
+            - textbox "Current Password *" [ref=f24e78]:
+              - /placeholder: Enter current password
+          - generic [ref=f24e79]:
+            - generic [ref=f24e80]:
+              - generic [ref=f24e81]: Authenticator Code
+              - textbox "Authenticator Code" [ref=f24e82]:
+                - /placeholder: 6-digit code
+            - generic [ref=f24e83]:
+              - generic [ref=f24e84]: Or Backup Code
+              - textbox "Or Backup Code" [ref=f24e85]:
+                - /placeholder: Backup code
+          - button " Disable 2FA" [ref=f24e86] [cursor=pointer]:
+            - generic [ref=f24e87]: 
+            - text: Disable 2FA

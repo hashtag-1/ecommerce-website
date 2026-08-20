@@ -1,0 +1,18 @@
+- generic [ref=f47e2]:
+  - generic [ref=f47e3]:
+    - generic [ref=f47e4]:
+      - generic [ref=f47e5]: 
+      - heading "Two-Factor Authentication" [level=1] [ref=f47e6]
+      - paragraph [ref=f47e7]: Enter the 6-digit code from your Authenticator app
+    - generic [ref=f47e8]:
+      - button "Authenticator App" [ref=f47e9] [cursor=pointer]
+      - button "Backup Code" [ref=f47e10] [cursor=pointer]
+    - generic [ref=f47e11]:
+      - generic [ref=f47e13]:
+        - generic [ref=f47e14]: Authentication Code
+        - textbox "Authentication Code" [ref=f47e15]:
+          - /placeholder: "000000"
+      - text: 
+      - button "Verify" [ref=f47e16] [cursor=pointer]
+  - link "← Back to Login" [ref=f47e18] [cursor=pointer]:
+    - /url: login.php

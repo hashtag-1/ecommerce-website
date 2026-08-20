@@ -1,0 +1,184 @@
+- generic [active] [ref=f50e1]:
+  - status "Current weather and time in Kathmandu, Nepal" [ref=f50e2]:
+    - generic [ref=f50e4]:
+      - generic [ref=f50e5]:
+        - generic [ref=f50e6]: 
+        - text: Kathmandu
+      - generic [ref=f50e7]: "|"
+      - generic [ref=f50e8]:
+        - generic [ref=f50e9]: 
+        - generic [ref=f50e10]: Loading...
+      - generic [ref=f50e11]: "--°C"
+      - generic [ref=f50e12]: "|"
+      - generic [ref=f50e13]:
+        - generic [ref=f50e14]: 
+        - generic [ref=f50e15]: "--%"
+      - generic [ref=f50e16]:
+        - generic [ref=f50e17]: 
+        - text: "-- km/h"
+      - generic [ref=f50e18]: "|"
+      - generic [ref=f50e19]:
+        - generic [ref=f50e20]: 
+        - generic [ref=f50e21]: 01:26:57 AM
+  - generic [ref=f50e23]:
+    - generic [ref=f50e24]:
+      - generic [ref=f50e25]:
+        - generic [ref=f50e26]: 
+        - text: +977-01-1234567
+      - generic [ref=f50e27]:
+        - generic [ref=f50e28]: 
+        - text: info@seed2greens.com
+    - generic [ref=f50e29]:
+      - link "Login" [ref=f50e30] [cursor=pointer]:
+        - /url: login.php
+      - link "Register" [ref=f50e31] [cursor=pointer]:
+        - /url: register.php
+  - navigation [ref=f50e32]:
+    - generic [ref=f50e33]:
+      - link " Seed 2 Greens" [ref=f50e34] [cursor=pointer]:
+        - /url: index.php
+        - generic [ref=f50e35]: 
+        - text: Seed
+        - generic [ref=f50e36]: "2"
+        - text: Greens
+      - list [ref=f50e37]:
+        - listitem [ref=f50e38]:
+          - link "Home" [ref=f50e39] [cursor=pointer]:
+            - /url: index.php
+        - listitem [ref=f50e40]:
+          - link "Products" [ref=f50e41] [cursor=pointer]:
+            - /url: products.php
+        - listitem [ref=f50e42]:
+          - link "Categories " [ref=f50e43] [cursor=pointer]:
+            - /url: "#"
+            - text: Categories
+            - generic [ref=f50e44]: 
+        - listitem [ref=f50e45]:
+          - link "About" [ref=f50e46] [cursor=pointer]:
+            - /url: about.php
+        - listitem [ref=f50e47]:
+          - link "Contact" [ref=f50e48] [cursor=pointer]:
+            - /url: contact.php
+      - generic [ref=f50e49]:
+        - textbox "Search products" [ref=f50e50]:
+          - /placeholder: Search products...
+        - button "Submit search" [ref=f50e51] [cursor=pointer]:
+          - generic [ref=f50e52]: 
+      - generic [ref=f50e53]:
+        - link " 0" [ref=f50e54] [cursor=pointer]:
+          - /url: wishlist.php
+          - generic [ref=f50e55]: 
+          - generic [ref=f50e56]: "0"
+        - link " 0" [ref=f50e57] [cursor=pointer]:
+          - /url: cart.php
+          - generic [ref=f50e58]: 
+          - generic [ref=f50e59]: "0"
+    - text: 
+  - main [ref=f50e60]:
+    - generic [ref=f50e62]:
+      - generic [ref=f50e63]:
+        - generic [ref=f50e64]: 
+        - heading "Welcome Back" [level=2] [ref=f50e65]
+        - paragraph [ref=f50e66]: Login to your Seed2Greens account
+      - generic [ref=f50e67]:
+        - generic [ref=f50e68]:
+          - generic [ref=f50e69]: Email Address
+          - textbox "Email Address" [ref=f50e70]:
+            - /placeholder: Enter your email
+        - generic [ref=f50e71]:
+          - generic [ref=f50e72]: Password
+          - generic [ref=f50e73]:
+            - textbox "Password" [ref=f50e74]:
+              - /placeholder: Enter your password
+            - button "" [ref=f50e75] [cursor=pointer]
+        - button "Login" [ref=f50e77] [cursor=pointer]
+      - paragraph [ref=f50e79]:
+        - text: Don't have an account?
+        - link "Register here" [ref=f50e80] [cursor=pointer]:
+          - /url: register.php
+  - contentinfo [ref=f50e81]:
+    - generic [ref=f50e84]:
+      - generic [ref=f50e85]:
+        - generic [ref=f50e86]:
+          - generic [ref=f50e87]: 
+          - text: Seed
+          - generic [ref=f50e88]: "2"
+          - text: Greens
+        - paragraph [ref=f50e89]: Growing a greener future, one seed at a time.
+        - generic [ref=f50e90]:
+          - link "Facebook" [ref=f50e91] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f50e92]: 
+          - link "Instagram" [ref=f50e93] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f50e94]: 
+          - link "Twitter" [ref=f50e95] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f50e96]: 
+          - link "YouTube" [ref=f50e97] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f50e98]: 
+      - generic [ref=f50e99]:
+        - heading "Quick Links" [level=4] [ref=f50e100]
+        - list [ref=f50e101]:
+          - listitem [ref=f50e102]:
+            - link "Home" [ref=f50e103] [cursor=pointer]:
+              - /url: index.php
+          - listitem [ref=f50e104]:
+            - link "Products" [ref=f50e105] [cursor=pointer]:
+              - /url: products.php
+          - listitem [ref=f50e106]:
+            - link "Categories" [ref=f50e107] [cursor=pointer]:
+              - /url: category.php
+          - listitem [ref=f50e108]:
+            - link "About Us" [ref=f50e109] [cursor=pointer]:
+              - /url: about.php
+          - listitem [ref=f50e110]:
+            - link "Contact Us" [ref=f50e111] [cursor=pointer]:
+              - /url: contact.php
+      - generic [ref=f50e112]:
+        - heading "Shop Categories" [level=4] [ref=f50e113]
+        - list [ref=f50e114]:
+          - listitem [ref=f50e115]:
+            - link " Agriculture Tools" [ref=f50e116] [cursor=pointer]:
+              - /url: category.php?id=4
+              - generic [ref=f50e117]: 
+              - text: Agriculture Tools
+          - listitem [ref=f50e118]:
+            - link " Fresh Produce" [ref=f50e119] [cursor=pointer]:
+              - /url: category.php?id=1
+              - generic [ref=f50e120]: 
+              - text: Fresh Produce
+          - listitem [ref=f50e121]:
+            - link " Organic Fertilizers" [ref=f50e122] [cursor=pointer]:
+              - /url: category.php?id=3
+              - generic [ref=f50e123]: 
+              - text: Organic Fertilizers
+          - listitem [ref=f50e124]:
+            - link " Seeds" [ref=f50e125] [cursor=pointer]:
+              - /url: category.php?id=2
+              - generic [ref=f50e126]: 
+              - text: Seeds
+      - generic [ref=f50e127]:
+        - heading "Get in Touch" [level=4] [ref=f50e128]
+        - list [ref=f50e129]:
+          - listitem [ref=f50e130]:
+            - generic [ref=f50e131]: 
+            - text: Nepal
+          - listitem [ref=f50e132]:
+            - link " +977-01-1234567" [ref=f50e133] [cursor=pointer]:
+              - /url: tel:+977-01-1234567
+              - generic [ref=f50e134]: 
+              - text: +977-01-1234567
+          - listitem [ref=f50e135]:
+            - link " info@seed2greens.com" [ref=f50e136] [cursor=pointer]:
+              - /url: mailto:info@seed2greens.com
+              - generic [ref=f50e137]: 
+              - text: info@seed2greens.com
+    - generic [ref=f50e140]:
+      - generic [ref=f50e141]: Stay Updated
+      - textbox "Enter your email" [ref=f50e142]
+      - button "Subscribe" [ref=f50e143] [cursor=pointer]
+    - generic [ref=f50e146]:
+      - paragraph [ref=f50e147]: © 2026 Seed 2 Greens. All rights reserved.
+      - paragraph [ref=f50e148]: Made with 🌱 for a greener future.

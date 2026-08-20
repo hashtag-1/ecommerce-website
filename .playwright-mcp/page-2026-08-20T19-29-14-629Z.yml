@@ -1,0 +1,97 @@
+- generic [ref=f20e2]:
+  - complementary [ref=f20e3]:
+    - heading " Seed2Greens" [level=2] [ref=f20e5]:
+      - generic [ref=f20e6]: 
+      - text: Seed2Greens
+    - list [ref=f20e7]:
+      - listitem [ref=f20e8]:
+        - link " Dashboard" [ref=f20e9] [cursor=pointer]:
+          - /url: dashboard.php
+          - generic [ref=f20e10]: 
+          - text: Dashboard
+      - listitem [ref=f20e11]:
+        - link " Orders" [ref=f20e12] [cursor=pointer]:
+          - /url: orders.php
+          - generic [ref=f20e13]: 
+          - text: Orders
+      - listitem [ref=f20e14]:
+        - link " Customers" [ref=f20e15] [cursor=pointer]:
+          - /url: customers.php
+          - generic [ref=f20e16]: 
+          - text: Customers
+      - listitem [ref=f20e17]:
+        - link " Products" [ref=f20e18] [cursor=pointer]:
+          - /url: products.php
+          - generic [ref=f20e19]: 
+          - text: Products
+      - listitem [ref=f20e20]:
+        - link " Categories" [ref=f20e21] [cursor=pointer]:
+          - /url: categories.php
+          - generic [ref=f20e22]: 
+          - text: Categories
+      - listitem [ref=f20e23]:
+        - link " Reviews" [ref=f20e24] [cursor=pointer]:
+          - /url: reviews.php
+          - generic [ref=f20e25]: 
+          - text: Reviews
+      - listitem [ref=f20e26]:
+        - link " Account Settings" [ref=f20e27] [cursor=pointer]:
+          - /url: settings.php
+          - generic [ref=f20e28]: 
+          - text: Account Settings
+      - listitem [ref=f20e29]:
+        - link " View Site" [ref=f20e30] [cursor=pointer]:
+          - /url: ../index.php
+          - generic [ref=f20e31]: 
+          - text: View Site
+      - listitem [ref=f20e32]:
+        - button " Logout" [ref=f20e34] [cursor=pointer]:
+          - generic [ref=f20e35]: 
+          - text: Logout
+  - generic [ref=f20e36]:
+    - banner [ref=f20e37]:
+      - generic [ref=f20e38]:
+        - text: 
+        - heading "Account Settings" [level=2] [ref=f20e39]
+      - generic [ref=f20e40]:
+        - generic [ref=f20e41]: Welcome, Admin User
+        - button "Logout" [ref=f20e43] [cursor=pointer]
+    - main [ref=f20e44]:
+      - generic [ref=f20e45]:
+        - heading "Change Username & Password" [level=3] [ref=f20e46]
+        - paragraph [ref=f20e47]: Enter your current password, then update your username, password, or both.
+        - generic [ref=f20e48]:
+          - generic [ref=f20e49]:
+            - generic [ref=f20e50]: Current Password *
+            - textbox "Current Password *" [ref=f20e51]:
+              - /placeholder: Enter current password
+          - generic [ref=f20e52]:
+            - generic [ref=f20e53]: New Username
+            - textbox "New Username" [ref=f20e54]:
+              - /placeholder: Enter new username
+              - text: sanskar
+          - generic [ref=f20e55]:
+            - generic [ref=f20e56]:
+              - generic [ref=f20e57]: New Password
+              - textbox "New Password" [ref=f20e58]:
+                - /placeholder: Leave blank to keep current
+            - generic [ref=f20e59]:
+              - generic [ref=f20e60]: Confirm New Password
+              - textbox "Confirm New Password" [ref=f20e61]:
+                - /placeholder: Confirm new password
+          - button " Update Credentials" [ref=f20e62] [cursor=pointer]:
+            - generic [ref=f20e63]: 
+            - text: Update Credentials
+      - generic [ref=f20e64]:
+        - heading " Two-Factor Authentication" [level=3] [ref=f20e65]:
+          - generic [ref=f20e66]: 
+          - text: Two-Factor Authentication
+        - generic [ref=f20e67]:
+          - generic [ref=f20e68]: 
+          - text: Two-factor authentication is
+          - strong [ref=f20e69]: not enabled
+          - text: .
+        - paragraph [ref=f20e70]: Protect your admin account with Google Authenticator. You will need an authenticator app on your phone.
+        - button " Enable Two-Factor Authentication" [ref=f20e72] [cursor=pointer]:
+          - generic [ref=f20e73]: 
+          - text: Enable Two-Factor Authentication

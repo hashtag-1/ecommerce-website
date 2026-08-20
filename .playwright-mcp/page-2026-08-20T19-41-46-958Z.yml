@@ -1,0 +1,117 @@
+- generic [ref=f49e2]:
+  - complementary [ref=f49e3]:
+    - heading " Seed2Greens" [level=2] [ref=f49e5]:
+      - generic [ref=f49e6]: 
+      - text: Seed2Greens
+    - list [ref=f49e7]:
+      - listitem [ref=f49e8]:
+        - link " Dashboard" [ref=f49e9] [cursor=pointer]:
+          - /url: dashboard.php
+          - generic [ref=f49e10]: 
+          - text: Dashboard
+      - listitem [ref=f49e11]:
+        - link " Orders" [ref=f49e12] [cursor=pointer]:
+          - /url: orders.php
+          - generic [ref=f49e13]: 
+          - text: Orders
+      - listitem [ref=f49e14]:
+        - link " Customers" [ref=f49e15] [cursor=pointer]:
+          - /url: customers.php
+          - generic [ref=f49e16]: 
+          - text: Customers
+      - listitem [ref=f49e17]:
+        - link " Products" [ref=f49e18] [cursor=pointer]:
+          - /url: products.php
+          - generic [ref=f49e19]: 
+          - text: Products
+      - listitem [ref=f49e20]:
+        - link " Categories" [ref=f49e21] [cursor=pointer]:
+          - /url: categories.php
+          - generic [ref=f49e22]: 
+          - text: Categories
+      - listitem [ref=f49e23]:
+        - link " Reviews" [ref=f49e24] [cursor=pointer]:
+          - /url: reviews.php
+          - generic [ref=f49e25]: 
+          - text: Reviews
+      - listitem [ref=f49e26]:
+        - link " Account Settings" [ref=f49e27] [cursor=pointer]:
+          - /url: settings.php
+          - generic [ref=f49e28]: 
+          - text: Account Settings
+      - listitem [ref=f49e29]:
+        - link " View Site" [ref=f49e30] [cursor=pointer]:
+          - /url: ../index.php
+          - generic [ref=f49e31]: 
+          - text: View Site
+      - listitem [ref=f49e32]:
+        - button " Logout" [ref=f49e34] [cursor=pointer]:
+          - generic [ref=f49e35]: 
+          - text: Logout
+  - generic [ref=f49e36]:
+    - banner [ref=f49e37]:
+      - generic [ref=f49e38]:
+        - text: 
+        - heading "Orders Management" [level=2] [ref=f49e39]
+      - button "Logout" [ref=f49e42] [cursor=pointer]
+    - main [ref=f49e43]:
+      - generic [ref=f49e45]:
+        - textbox "Search by Order ID, customer name or email..." [ref=f49e46]
+        - combobox [ref=f49e47]:
+          - option "All Statuses" [selected]
+          - option "Pending"
+          - option "Confirmed"
+          - option "Processing"
+          - option "Shipped"
+          - option "Delivered"
+          - option "Cancelled"
+        - button " Search" [ref=f49e48] [cursor=pointer]:
+          - generic [ref=f49e49]: 
+          - text: Search
+      - table [ref=f49e51]:
+        - rowgroup [ref=f49e52]:
+          - row [ref=f49e53]:
+            - columnheader "Order ID" [ref=f49e54]
+            - columnheader "Customer" [ref=f49e55]
+            - columnheader "Phone" [ref=f49e56]
+            - columnheader "Total" [ref=f49e57]
+            - columnheader "Status" [ref=f49e58]
+            - columnheader "Date" [ref=f49e59]
+            - columnheader "Action" [ref=f49e60]
+        - rowgroup [ref=f49e61]:
+          - row [ref=f49e62]:
+            - cell [ref=f49e63]:
+              - strong [ref=f49e64]: "#0001"
+            - cell "Ramesh Sharma ramesh@example.com" [ref=f49e65]
+            - cell "9841234567" [ref=f49e66]
+            - cell [ref=f49e67]:
+              - strong [ref=f49e68]: Rs. 620.00
+            - cell "Pending" [ref=f49e69]
+            - cell "Aug 21, 2026" [ref=f49e71]
+            - cell [ref=f49e72]:
+              - link "View Details" [ref=f49e73] [cursor=pointer]:
+                - /url: order-details.php?id=1
+          - row [ref=f49e74]:
+            - cell [ref=f49e75]:
+              - strong [ref=f49e76]: "#0002"
+            - cell "Ramesh Sharma ramesh@example.com" [ref=f49e77]
+            - cell "9841234567" [ref=f49e78]
+            - cell [ref=f49e79]:
+              - strong [ref=f49e80]: Rs. 850.00
+            - cell "Confirmed" [ref=f49e81]
+            - cell "Aug 21, 2026" [ref=f49e83]
+            - cell [ref=f49e84]:
+              - link "View Details" [ref=f49e85] [cursor=pointer]:
+                - /url: order-details.php?id=2
+          - row [ref=f49e86]:
+            - cell [ref=f49e87]:
+              - strong [ref=f49e88]: "#0003"
+            - cell "Sita Thapa sita@example.com" [ref=f49e89]
+            - cell "9857654321" [ref=f49e90]
+            - cell [ref=f49e91]:
+              - strong [ref=f49e92]: Rs. 450.00
+            - cell "Processing" [ref=f49e93]
+            - cell "Aug 21, 2026" [ref=f49e95]
+            - cell [ref=f49e96]:
+              - link "View Details" [ref=f49e97] [cursor=pointer]:
+                - /url: order-details.php?id=3
