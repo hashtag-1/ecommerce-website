@@ -1,0 +1,18 @@
+- generic [ref=f10e2]:
+  - generic [ref=f10e3]:
+    - generic [ref=f10e4]:
+      - generic [ref=f10e5]: 
+      - heading "Seed2Greens Admin" [level=1] [ref=f10e6]
+      - paragraph [ref=f10e7]: Login to manage the platform
+    - generic [ref=f10e8]:
+      - generic [ref=f10e9]:
+        - generic [ref=f10e10]: Username
+        - textbox "Username" [active] [ref=f10e11]:
+          - /placeholder: Enter username
+      - generic [ref=f10e12]:
+        - generic [ref=f10e13]: Password
+        - textbox "Password" [ref=f10e14]:
+          - /placeholder: Enter password
+      - button "Login" [ref=f10e15] [cursor=pointer]
+  - link "← Back to Website" [ref=f10e17] [cursor=pointer]:
+    - /url: ../index.php

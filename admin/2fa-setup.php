@@ -22,7 +22,8 @@ if (isAdminLoggedIn()) {
 $admin_id = $admin['id'];
 
 // Load pending secret from database (persists across devices/browsers)
-$pendingSecret = $admin['totp_pending_secret'] ?? '';
+$hasPendingColumn = dbColumnExists('admin', 'totp_pending_secret');
+$pendingSecret = $hasPendingColumn ? ($admin['totp_pending_secret'] ?? '') : ($_SESSION['admin_2fa_secret'] ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['setup_2fa'])) {
     if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
@@ -41,7 +42,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['setup_2fa'])) {
             $backupCodes = TwoFactorAuth::generateBackupCodes(10);
             $hashedBackupCodes = array_map([TwoFactorAuth::class, 'hashBackupCode'], $backupCodes);
 
-            $stmt = $db->prepare("UPDATE admin SET totp_secret = ?, totp_enabled = 1, backup_codes = ?, totp_pending_secret = NULL WHERE id = ?");
+            if ($hasPendingColumn) {
+                $stmt = $db->prepare("UPDATE admin SET totp_secret = ?, totp_enabled = 1, backup_codes = ?, totp_pending_secret = NULL WHERE id = ?");
+            } else {
+                $stmt = $db->prepare("UPDATE admin SET totp_secret = ?, totp_enabled = 1, backup_codes = ? WHERE id = ?");
+            }
             $stmt->execute([$secret, json_encode(array_values($hashedBackupCodes)), $admin_id]);
 
             completeAdminLogin($admin);
@@ -53,11 +58,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['setup_2fa'])) {
 
 $error = '';
 
-// If no pending secret in DB, generate and store one
+// If no pending secret in DB or session, generate and store one
 if (empty($pendingSecret)) {
     $pendingSecret = TwoFactorAuth::generateSecret();
-    $stmt = $db->prepare("UPDATE admin SET totp_pending_secret = ? WHERE id = ?");
-    $stmt->execute([$pendingSecret, $admin_id]);
+    if ($hasPendingColumn) {
+        $stmt = $db->prepare("UPDATE admin SET totp_pending_secret = ? WHERE id = ?");
+        $stmt->execute([$pendingSecret, $admin_id]);
+    }
+    $_SESSION['admin_2fa_secret'] = $pendingSecret;
 }
 
 if (empty($_SESSION['admin_2fa_backup_codes'])) {

@@ -54,6 +54,18 @@ function getAdmin2FAUserId() {
     return $_SESSION['admin_2fa_user_id'] ?? null;
 }
 
+function dbColumnExists($table, $column) {
+    global $db;
+    try {
+        $column = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $column);
+        $stmt = $db->prepare("SHOW COLUMNS FROM `$table` LIKE '" . $column . "'");
+        $stmt->execute();
+        return $stmt->fetch() !== false;
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
 function redirect($url) {
     header('Location: ' . $url);
     exit();

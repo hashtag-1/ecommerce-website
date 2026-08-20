@@ -27,11 +27,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['enable_2fa'])) {
     if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
         $error = 'Invalid request. Please try again.';
     } else {
-        $existingPending = $admin['totp_pending_secret'] ?? '';
+        $hasPendingColumn = dbColumnExists('admin', 'totp_pending_secret');
+        $existingPending = $hasPendingColumn ? ($admin['totp_pending_secret'] ?? '') : '';
+        
         if (empty($existingPending)) {
             $secret = TwoFactorAuth::generateSecret();
-            $stmt = $db->prepare("UPDATE admin SET totp_pending_secret = ? WHERE id = ?");
-            $stmt->execute([$secret, $admin['id']]);
+            if ($hasPendingColumn) {
+                $stmt = $db->prepare("UPDATE admin SET totp_pending_secret = ? WHERE id = ?");
+                $stmt->execute([$secret, $admin['id']]);
+            }
+            $_SESSION['admin_2fa_secret'] = $secret;
         }
         
         $_SESSION['admin_2fa_pending'] = true;
@@ -72,7 +77,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['disable_2fa'])) {
             if (!$verified) {
                 $error = 'Invalid authentication code. Please enter a valid TOTP or backup code.';
             } else {
-                $stmt = $db->prepare("UPDATE admin SET totp_secret = NULL, totp_enabled = 0, backup_codes = NULL, totp_pending_secret = NULL WHERE id = ?");
+                $hasPendingColumn = dbColumnExists('admin', 'totp_pending_secret');
+                if ($hasPendingColumn) {
+                    $stmt = $db->prepare("UPDATE admin SET totp_secret = NULL, totp_enabled = 0, backup_codes = NULL, totp_pending_secret = NULL WHERE id = ?");
+                } else {
+                    $stmt = $db->prepare("UPDATE admin SET totp_secret = NULL, totp_enabled = 0, backup_codes = NULL WHERE id = ?");
+                }
                 $stmt->execute([$admin_id]);
                 setFlashMessage('Two-factor authentication has been disabled.', 'success');
                 redirect('settings.php');

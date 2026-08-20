@@ -101,7 +101,7 @@ function loginAdmin($username, $password) {
 function logoutAdmin() {
     $admin_id = $_SESSION['admin_id'] ?? null;
     
-    if ($admin_id) {
+    if ($admin_id && dbColumnExists('admin', 'totp_pending_secret')) {
         global $db;
         $stmt = $db->prepare("UPDATE admin SET totp_pending_secret = NULL WHERE id = ?");
         $stmt->execute([$admin_id]);
