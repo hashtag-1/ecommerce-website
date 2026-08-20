@@ -147,6 +147,7 @@ CREATE TABLE admin (
     totp_secret VARCHAR(255) DEFAULT NULL,
     totp_enabled TINYINT(1) DEFAULT 0,
     backup_codes JSON DEFAULT NULL,
+    totp_pending_secret VARCHAR(255) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

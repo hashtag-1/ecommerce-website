@@ -99,6 +99,14 @@ function loginAdmin($username, $password) {
 }
 
 function logoutAdmin() {
+    $admin_id = $_SESSION['admin_id'] ?? null;
+    
+    if ($admin_id) {
+        global $db;
+        $stmt = $db->prepare("UPDATE admin SET totp_pending_secret = NULL WHERE id = ?");
+        $stmt->execute([$admin_id]);
+    }
+    
     $_SESSION = [];
     if (ini_get('session.use_cookies')) {
         $params = session_get_cookie_params();

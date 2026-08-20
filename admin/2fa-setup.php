@@ -21,12 +21,15 @@ if (isAdminLoggedIn()) {
 
 $admin_id = $admin['id'];
 
+// Load pending secret from database (persists across devices/browsers)
+$pendingSecret = $admin['totp_pending_secret'] ?? '';
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['setup_2fa'])) {
     if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
         $error = 'Invalid request. Please try again.';
     } else {
         $code = preg_replace('/\s/', '', $_POST['totp_code'] ?? '');
-        $secret = $_SESSION['admin_2fa_secret'] ?? '';
+        $secret = $pendingSecret;
 
         if (empty($secret)) {
             $error = 'Session expired. Please try again.';
@@ -35,12 +38,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['setup_2fa'])) {
         } elseif (!TwoFactorAuth::verifyTOTP($secret, $code)) {
             $error = 'Invalid code. Please enter the 6-digit code from your Authenticator app.';
         } else {
-            $backupCodes = $_SESSION['admin_2fa_backup_codes'] ?? TwoFactorAuth::generateBackupCodes(10);
+            $backupCodes = TwoFactorAuth::generateBackupCodes(10);
             $hashedBackupCodes = array_map([TwoFactorAuth::class, 'hashBackupCode'], $backupCodes);
 
-            $_SESSION['admin_2fa_backup_codes'] = $backupCodes;
-
-            $stmt = $db->prepare("UPDATE admin SET totp_secret = ?, totp_enabled = 1, backup_codes = ? WHERE id = ?");
+            $stmt = $db->prepare("UPDATE admin SET totp_secret = ?, totp_enabled = 1, backup_codes = ?, totp_pending_secret = NULL WHERE id = ?");
             $stmt->execute([$secret, json_encode(array_values($hashedBackupCodes)), $admin_id]);
 
             completeAdminLogin($admin);
@@ -52,15 +53,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['setup_2fa'])) {
 
 $error = '';
 
-if (empty($_SESSION['admin_2fa_secret'])) {
-    $_SESSION['admin_2fa_secret'] = TwoFactorAuth::generateSecret();
+// If no pending secret in DB, generate and store one
+if (empty($pendingSecret)) {
+    $pendingSecret = TwoFactorAuth::generateSecret();
+    $stmt = $db->prepare("UPDATE admin SET totp_pending_secret = ? WHERE id = ?");
+    $stmt->execute([$pendingSecret, $admin_id]);
 }
 
 if (empty($_SESSION['admin_2fa_backup_codes'])) {
     $_SESSION['admin_2fa_backup_codes'] = TwoFactorAuth::generateBackupCodes(10);
 }
 
-$secret = $_SESSION['admin_2fa_secret'];
+$secret = $pendingSecret;
 $qrCodeUrl = TwoFactorAuth::getQrCodeUrl($admin['username'], $secret);
 $provisioningUri = TwoFactorAuth::getProvisioningUri($admin['username'], $secret);
 $backupCodes = $_SESSION['admin_2fa_backup_codes'] ?? [];
