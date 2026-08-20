@@ -19,7 +19,10 @@ $stmt->execute([$user_id]);
 $user = $stmt->fetch();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
-    $name = sanitize($_POST['name']);
+    if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid request. Please try again.';
+    } else {
+        $name = sanitize($_POST['name']);
     $phone = sanitize($_POST['phone']);
     $address = sanitize($_POST['address']);
     $current_password = $_POST['current_password'];
@@ -62,6 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
         $_SESSION['user_address'] = $address;
     }
 }
+}
 ?>
 
 <?php include __DIR__ . '/includes/header.php'; ?>
@@ -84,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
             <?php endif; ?>
             
             <form method="POST" action="">
+                <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
                 <h3 style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--primary);">Account Information</h3>
                 
                 <div class="form-group">

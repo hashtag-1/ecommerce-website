@@ -9,6 +9,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Seed2Greens - Your online marketplace for fresh produce, seeds, organic fertilizers, and agricultural tools.">
+    <meta name="csrf-token" content="<?php echo generateCsrfToken(); ?>">
     <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
     <title><?php echo $page_title; ?></title>
     <link rel="stylesheet" href="assets/css/style.css">
@@ -66,7 +67,10 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     <span>Welcome, <?php echo sanitize($_SESSION['user_name']); ?></span>
                     <a href="profile.php">Profile</a>
                     <a href="orders.php">My Orders</a>
-                    <a href="logout.php">Logout</a>
+                    <form method="POST" action="logout.php" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
+                        <button type="submit" name="logout" style="background: none; border: none; color: inherit; cursor: pointer; font-size: inherit; padding: 0;">Logout</button>
+                    </form>
                 <?php else: ?>
                     <a href="login.php">Login</a>
                     <a href="register.php">Register</a>

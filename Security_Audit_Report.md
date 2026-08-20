@@ -794,4 +794,217 @@ The project's `sanitize()` helper (`htmlspecialchars($data, ENT_QUOTES, 'UTF-8')
 
 ---
 
+## CSRF (Cross-Site Request Forgery)
+
+### Methodology
+
+Every state-changing operation (POST forms, GET actions that modify data) was inspected for CSRF token presence and validation. The project already had a working CSRF implementation (`generateCsrfToken()` / `validateCsrfToken()` in `includes/functions.php`) used by admin and login forms. This audit verified that all user-facing state-changing operations also use proper CSRF tokens — POST-only endpoints were NOT considered protected without explicit token validation. GET-based state-changing operations were converted to POST forms with CSRF tokens where feasible.
+
+---
+
+### 1. Missing CSRF on Customer Profile Update (Password/Username/Phone/Address)
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `profile.php` |
+| **Root Cause** | The profile update form (`update_profile`) submitted via POST without a CSRF token. An attacker could craft a hidden form on another site that auto-submits to `profile.php`, changing the victim's password, phone, or address. |
+| **Exploitable** | Yes |
+| **Severity** | High |
+| **Impact** | Account takeover via password change, or persistent phishing via address/phone modification. |
+| **Verification** | Inspect `profile.php` form for hidden `csrf_token` field and server-side `validateCsrfToken()` call. |
+| **Fix Applied** | Added `generateCsrfToken()` hidden input to the form and `validateCsrfToken()` check at the top of the POST handler. |
+| **Re-test Result** | Verified: CSRF token present at `profile.php:88`, validation at `profile.php:22`. PHP syntax check passes. |
+| **Status** | **Fixed** |
+
+---
+
+### 2. Missing CSRF on Checkout / Order Placement
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `checkout.php` |
+| **Root Cause** | The checkout form (`place_order`) submitted via POST without a CSRF token. An attacker could force a victim to place an order with attacker-controlled shipping details. |
+| **Exploitable** | Yes |
+| **Severity** | High |
+| **Impact** | Unauthorized order placement, financial loss, or shipping address manipulation. |
+| **Verification** | Inspect `checkout.php` form for hidden `csrf_token` field and server-side `validateCsrfToken()` call. |
+| **Fix Applied** | Added `generateCsrfToken()` hidden input to the form and `validateCsrfToken()` check at the top of the POST handler. Updated JS `proceedCheckoutBtn` to include the CSRF token in the dynamically created form. |
+| **Re-test Result** | Verified: CSRF token present at `checkout.php:125`, validation at `checkout.php:50`. JS updated at `assets/js/script.js:314-318`. PHP syntax check passes. |
+| **Status** | **Fixed** |
+
+---
+
+### 3. Missing CSRF on Cart Operations (Add, Update, Remove)
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `cart.php` |
+| **Root Cause** | Cart add (`add_to_cart`), quantity update (`update_cart`), and item removal (`remove` via GET) had no CSRF protection. The remove action was a GET link, which is especially vulnerable to CSRF via image tags or link prefetching. |
+| **Exploitable** | Yes |
+| **Severity** | High |
+| **Impact** | Attacker could add/remove items from a victim's cart or manipulate quantities, potentially causing checkout of unwanted items or cart disruption. |
+| **Verification** | Inspect `cart.php` for CSRF tokens on all cart forms and removal mechanism. |
+| **Fix Applied** | Added `validateCsrfToken()` to `add_to_cart` and `update_cart` POST handlers. Converted GET remove link to a POST form with CSRF token. Added CSRF hidden fields to all cart quantity update forms. |
+| **Re-test Result** | Verified: CSRF validation at `cart.php:23`, `cart.php:53`, `cart.php:78`. Removal form with CSRF at `cart.php:139-146`. PHP syntax check passes. |
+| **Status** | **Fixed** |
+
+---
+
+### 4. Missing CSRF on Wishlist Operations (Toggle, Remove)
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `wishlist.php` |
+| **Root Cause** | Wishlist toggle (`toggle_wishlist`) and item removal (`remove` via GET) had no CSRF protection. The remove action used a GET link. |
+| **Exploitable** | Yes |
+| **Severity** | Medium |
+| **Impact** | Attacker could add/remove items from a victim's wishlist. |
+| **Verification** | Inspect `wishlist.php` for CSRF tokens on toggle form and removal mechanism. |
+| **Fix Applied** | Added `validateCsrfToken()` to `toggle_wishlist` POST handler. Converted GET remove link to a POST form with CSRF token. Added CSRF hidden field to add-to-cart form on wishlist page. |
+| **Re-test Result** | Verified: CSRF validation at `wishlist.php:16`, `wishlist.php:30`. Removal form with CSRF at `wishlist.php:88-94`. PHP syntax check passes. |
+| **Status** | **Fixed** |
+
+---
+
+### 5. Missing CSRF on Add-to-Cart Forms (Product, Category, Index, Products Pages)
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `product.php`, `category.php`, `index.php`, `products.php` |
+| **Root Cause** | Add-to-cart forms on product listing pages submitted to `cart.php` without CSRF tokens. While these forms use AJAX via `script.js`, the `FormData` is built directly from the form, so a missing token means the AJAX request carries no CSRF proof. |
+| **Exploitable** | Yes |
+| **Severity** | Medium |
+| **Impact** | Attacker could force a victim to add items to their cart via a crafted page. |
+| **Verification** | Inspect all add-to-cart forms for hidden `csrf_token` fields. |
+| **Fix Applied** | Added `generateCsrfToken()` hidden input to all add-to-cart forms across `product.php`, `category.php`, `index.php`, and `products.php`. |
+| **Re-test Result** | Verified: CSRF tokens present in all add-to-cart forms. PHP syntax checks pass for all modified files. |
+| **Status** | **Fixed** |
+
+---
+
+### 6. Missing CSRF on Logout (Customer and Admin)
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `logout.php`, `admin/logout.php` |
+| **Root Cause** | Logout was triggered via simple GET requests with no CSRF token. An attacker could log out a victim by embedding an image or link to the logout URL. |
+| **Exploitable** | Yes |
+| **Severity** | Low |
+| **Impact** | Denial of service / logout CSRF. Attacker can force victim to log out, but cannot take over the account. |
+| **Verification** | Inspect logout endpoints for CSRF validation. |
+| **Fix Applied** | `logout.php` converted to POST-only with CSRF validation. Header logout link converted to inline form. `admin/logout.php` now validates CSRF token (accepts both POST and GET with token for backward compatibility with existing admin links). All admin sidebar and header logout links bulk-updated to POST forms with CSRF tokens. |
+| **Re-test Result** | Verified: `logout.php` only accepts POST with valid CSRF. `admin/logout.php` validates CSRF on both POST and GET. All 12 admin pages updated. PHP syntax checks pass. |
+| **Status** | **Fixed** |
+
+---
+
+### 7. Missing CSRF on Review Submission API
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `api/submit_review.php` |
+| **Root Cause** | The review submission API endpoint accepted POST requests without validating a CSRF token. An attacker could submit reviews on behalf of logged-in users via CSRF. |
+| **Exploitable** | Yes |
+| **Severity** | Medium |
+| **Impact** | Attacker could flood the site with fake reviews or post malicious content under a victim's name. |
+| **Verification** | Inspect `api/submit_review.php` for `validateCsrfToken()` call. |
+| **Fix Applied** | Added `validateCsrfToken($_POST['csrf_token'] ?? '')` check at the top of the API endpoint. Updated `submitReview()` in `assets/js/script.js` to include the CSRF token from the `<meta name="csrf-token">` tag in the FormData. |
+| **Re-test Result** | Verified: CSRF validation at `api/submit_review.php:11`. JS updated at `assets/js/script.js:1258`. PHP syntax check passes. |
+| **Status** | **Fixed** |
+
+---
+
+### 8. Missing CSRF on Registration and Contact Forms
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `register.php`, `contact.php` |
+| **Root Cause** | Registration and contact forms submitted via POST without CSRF tokens. |
+| **Exploitable** | Yes (low impact) |
+| **Severity** | Low |
+| **Impact** | Attacker could register accounts or send contact messages on behalf of a victim. Account registration via CSRF is less severe since the attacker cannot control the credentials, but it could be used for mass registration abuse. |
+| **Verification** | Inspect forms for hidden `csrf_token` fields and server-side validation. |
+| **Fix Applied** | Added `generateCsrfToken()` hidden inputs and `validateCsrfToken()` checks to both `register.php` and `contact.php`. |
+| **Re-test Result** | Verified: CSRF tokens present and validated in both files. PHP syntax checks pass. |
+| **Status** | **Fixed** |
+
+---
+
+### 9. CSRF Token Generation and Validation Implementation
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/functions.php:generateCsrfToken()`, `validateCsrfToken()` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | CSRF tokens are generated using `bin2hex(random_bytes(32))` (256-bit random value) and validated using `hash_equals()` to prevent timing attacks. Tokens are stored in the session. This is a secure implementation. |
+| **Verification** | Inspect `generateCsrfToken()` and `validateCsrfToken()` in `includes/functions.php`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 10. CSRF Coverage on Admin Actions
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `admin/*.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Admin product CRUD (`add-product.php`, `edit-product.php`), category management (`categories.php`), order status updates (`order-details.php`), review management (`reviews.php`), user management (`users.php`, `customers.php`), and settings changes (`settings.php`) all validate CSRF tokens. Admin logout links now also include CSRF tokens. |
+| **Verification** | Confirm `validateCsrfToken()` is present in all admin POST handlers and state-changing GET actions. |
+| **Status** | **Already Secure** (now fully covered after logout link updates) |
+
+---
+
+## Summary
+
+**8 confirmed CSRF vulnerabilities were identified and fixed.**
+
+| Category | Count | Status |
+|----------|-------|--------|
+| Missing CSRF on customer profile update | 1 | Fixed |
+| Missing CSRF on checkout/order placement | 1 | Fixed |
+| Missing CSRF on cart operations | 1 | Fixed |
+| Missing CSRF on wishlist operations | 1 | Fixed |
+| Missing CSRF on add-to-cart forms | 1 | Fixed |
+| Missing CSRF on logout | 1 | Fixed |
+| Missing CSRF on review API | 1 | Fixed |
+| Missing CSRF on registration/contact | 1 | Fixed |
+| Already secure (token implementation) | 1 | N/A |
+| Already secure (admin coverage) | 1 | N/A |
+
+**Files Modified**
+
+| File | Changes |
+|------|---------|
+| `includes/header.php` | Added `<meta name="csrf-token">` for JS access |
+| `cart.php` | Added CSRF validation to POST handlers; converted GET remove to POST form |
+| `wishlist.php` | Added CSRF validation to POST handler; converted GET remove to POST form |
+| `checkout.php` | Added CSRF token to form and validation; updated JS dynamic form |
+| `profile.php` | Added CSRF token to form and validation |
+| `product.php` | Added CSRF tokens to add-to-cart and wishlist forms |
+| `category.php` | Added CSRF token to add-to-cart form |
+| `index.php` | Added CSRF token to add-to-cart form |
+| `products.php` | Added CSRF token to add-to-cart form |
+| `logout.php` | Converted to POST with CSRF validation |
+| `admin/logout.php` | Added CSRF validation; accepts POST and GET with token |
+| `admin/*.php` (12 files) | Updated all logout links/buttons to POST forms with CSRF tokens |
+| `api/submit_review.php` | Added CSRF validation |
+| `register.php` | Added CSRF token to form and validation |
+| `contact.php` | Added CSRF token to form and validation |
+| `assets/js/script.js` | Added CSRF token to `submitReview()` FormData and `proceedCheckoutBtn` dynamic form |
+
+---
+
+## Recommendations
+
+1. **Adopt a CSRF middleware pattern**: Consider creating a reusable function like `requireCsrfToken()` that validates and aborts on failure, reducing boilerplate in each page.
+2. **Enforce POST for all destructive actions**: Continue converting GET-based state-changing operations to POST. The cart and wishlist removals were converted; review any remaining GET actions.
+3. **Add SameSite cookies**: Complement CSRF tokens with `SameSite=Lax` or `Strict` cookie attributes (already added in the Authentication audit).
+4. **Automate CSRF testing**: Add CI tests that verify every state-changing endpoint rejects requests without a valid CSRF token.
+
+---
+
 *End of Report*

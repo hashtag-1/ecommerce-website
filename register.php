@@ -12,7 +12,10 @@ $error = '';
 $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
-    $name = sanitize($_POST['name']);
+    if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid request. Please try again.';
+    } else {
+        $name = sanitize($_POST['name']);
     $email = sanitize($_POST['email']);
     $phone = sanitize($_POST['phone']);
     $password = $_POST['password'];
@@ -49,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
     }
 }
 }
+}
 ?>
 
 <?php include __DIR__ . '/includes/header.php'; ?>
@@ -68,6 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
         <?php endif; ?>
         
         <form method="POST" action="">
+            <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
             <div class="form-group">
                 <label for="name">Full Name *</label>
                 <input type="text" id="name" name="name" value="<?php echo isset($_POST['name']) ? sanitize($_POST['name']) : ''; ?>" placeholder="Enter your full name" required>

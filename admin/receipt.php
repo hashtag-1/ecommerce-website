@@ -39,3 +39,4 @@ header('Content-Disposition: inline; filename="receipt-' . $order_id . '"');
 header('Cache-Control: private, max-age=3600');
 echo $data;
 exit;
+

@@ -47,7 +47,10 @@ $grand_total = $cart_total + $delivery_fee;
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
-    $customer_name = sanitize($_POST['customer_name']);
+    if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid request. Please try again.';
+    } else {
+        $customer_name = sanitize($_POST['customer_name']);
     $customer_email = sanitize($_POST['customer_email']);
     $customer_phone = sanitize($_POST['customer_phone']);
     $customer_address = sanitize($_POST['customer_address']);
@@ -101,6 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
         }
     }
 }
+}
 ?>
 
 <?php include __DIR__ . '/includes/header.php'; ?>
@@ -122,6 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
         <?php endif; ?>
         
         <form method="POST" action="" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
             <?php if (!empty($selected_items)): ?>
                 <?php foreach ($selected_items as $pid): ?>
                     <input type="hidden" name="selected_items[]" value="<?php echo (int)$pid; ?>">

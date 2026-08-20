@@ -8,6 +8,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
+    echo json_encode(['success' => false, 'message' => 'Invalid request. Please try again.']);
+    exit;
+}
+
 $name = trim($_POST['name'] ?? '');
 $rating = (int)($_POST['rating'] ?? 0);
 $reviewText = trim($_POST['review'] ?? '');

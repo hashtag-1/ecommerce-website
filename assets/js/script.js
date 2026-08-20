@@ -314,6 +314,12 @@ function initContent() {
             form.method = 'POST';
             form.action = 'checkout.php';
             
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            form.appendChild(csrfInput);
+            
             checkedBoxes.forEach(function(cb) {
                 const input = document.createElement('input');
                 input.type = 'hidden';
@@ -1256,6 +1262,7 @@ function initReviewsCarousel() {
             formData.append('name', name);
             formData.append('rating', rating);
             formData.append('review', reviewText);
+            formData.append('csrf_token', document.querySelector('meta[name="csrf-token"]')?.content || '');
 
             const response = await fetch('api/submit_review.php', {
                 method: 'POST',

@@ -20,6 +20,16 @@ $user_id = $_SESSION['user_id'];
 
 // Handle Add to Cart
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_to_cart'])) {
+    if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        if ($is_ajax) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid request. Please try again.', 'redirect' => 'login.php']);
+            exit();
+        }
+        setFlashMessage('Invalid request. Please try again.', 'error');
+        redirect('cart.php');
+    }
+    
     $product_id = (int)$_POST['product_id'];
     $quantity = (int)$_POST['quantity'];
     
@@ -49,6 +59,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_to_cart'])) {
 
 // Handle Update Quantity
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_cart'])) {
+    if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        if ($is_ajax) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Invalid request. Please try again.']);
+            exit();
+        }
+        setFlashMessage('Invalid request. Please try again.', 'error');
+        redirect('cart.php');
+    }
+    
     $product_id = (int)$_POST['product_id'];
     $quantity = (int)$_POST['quantity'];
     updateCartQuantity($user_id, $product_id, $quantity);
@@ -70,6 +90,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_cart'])) {
 // Handle Remove from Cart
 if (isset($_GET['remove'])) {
     $product_id = (int)$_GET['remove'];
+    removeFromCart($user_id, $product_id);
+    setFlashMessage('Product removed from cart', 'success');
+    redirect('cart.php');
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['remove_from_cart'])) {
+    if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        setFlashMessage('Invalid request. Please try again.', 'error');
+        redirect('cart.php');
+    }
+    $product_id = (int)$_POST['remove_product_id'];
     removeFromCart($user_id, $product_id);
     setFlashMessage('Product removed from cart', 'success');
     redirect('cart.php');
@@ -125,6 +156,7 @@ $grand_total = $cart_total + $delivery_fee;
                                     <td>Rs. <?php echo number_format($item['price'], 2); ?></td>
                                     <td>
                                         <form method="POST" action="" class="cart-qty-form">
+                                            <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
                                             <input type="hidden" name="product_id" value="<?php echo $item['product_id']; ?>">
                                             <div class="quantity-control">
                                                 <button type="button" class="qty-minus-btn" data-action="decrease">-</button>
@@ -136,9 +168,13 @@ $grand_total = $cart_total + $delivery_fee;
                                     </td>
                                     <td class="cart-item-subtotal"><strong>Rs. <?php echo number_format($item['subtotal'], 2); ?></strong></td>
                                     <td>
-                                        <a href="cart.php?remove=<?php echo $item['product_id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Remove this item from cart?')" style="padding: 6px 12px;">
+                                    <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Remove this item from cart?')">
+                                        <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
+                                        <input type="hidden" name="remove_product_id" value="<?php echo $item['product_id']; ?>">
+                                        <button type="submit" name="remove_from_cart" class="btn btn-danger btn-sm" style="padding: 6px 12px;">
                                             <i class="fas fa-trash"></i>
-                                        </a>
+                                        </button>
+                                    </form>
                                     </td>
                                     <td style="text-align: center;">
                                         <input type="checkbox" name="selected_items[]" value="<?php echo $item['product_id']; ?>" class="cart-item-checkbox" checked>

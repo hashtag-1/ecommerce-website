@@ -13,6 +13,11 @@ $user_id = $_SESSION['user_id'];
 
 // Handle Toggle Wishlist
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['toggle_wishlist'])) {
+    if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        setFlashMessage('Invalid request. Please try again.', 'error');
+        redirect('wishlist.php');
+    }
+    
     $product_id = (int)$_POST['product_id'];
     
     if (isInWishlist($user_id, $product_id)) {
@@ -28,6 +33,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['toggle_wishlist'])) {
 // Handle Remove from Wishlist
 if (isset($_GET['remove'])) {
     $product_id = (int)$_GET['remove'];
+    removeFromWishlist($user_id, $product_id);
+    setFlashMessage('Removed from wishlist', 'success');
+    redirect('wishlist.php');
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['remove_from_wishlist'])) {
+    if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        setFlashMessage('Invalid request. Please try again.', 'error');
+        redirect('wishlist.php');
+    }
+    $product_id = (int)$_POST['remove_product_id'];
     removeFromWishlist($user_id, $product_id);
     setFlashMessage('Removed from wishlist', 'success');
     redirect('wishlist.php');
@@ -65,13 +81,18 @@ $wishlist_items = getWishlistItems($user_id);
                             </div>
                             <div class="product-actions">
                                 <form method="POST" action="cart.php" class="add-to-cart-form">
+                                    <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
                                     <input type="hidden" name="product_id" value="<?php echo $item['product_id']; ?>">
                                     <input type="hidden" name="quantity" value="1">
                                     <button type="submit" name="add_to_cart" class="btn btn-primary btn-sm add-to-cart-btn">Add to Cart</button>
                                 </form>
-                                <a href="wishlist.php?remove=<?php echo $item['product_id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Remove from wishlist?')">
-                                    <i class="fas fa-trash"></i>
-                                </a>
+                                <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Remove from wishlist?')">
+                                    <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
+                                    <input type="hidden" name="remove_product_id" value="<?php echo $item['product_id']; ?>">
+                                    <button type="submit" name="remove_from_wishlist" class="btn btn-danger btn-sm">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>

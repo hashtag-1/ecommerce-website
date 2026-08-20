@@ -6,7 +6,10 @@ $success = '';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['send_message'])) {
-    $name = sanitize($_POST['name']);
+    if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid request. Please try again.';
+    } else {
+        $name = sanitize($_POST['name']);
     $email = sanitize($_POST['email']);
     $subject = sanitize($_POST['subject']);
     $message = sanitize($_POST['message']);
@@ -18,6 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['send_message'])) {
     } else {
         $success = 'Thank you for your message! We will get back to you soon.';
     }
+}
 }
 ?>
 
@@ -92,6 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['send_message'])) {
                 <?php endif; ?>
                 
                 <form method="POST" action="">
+                    <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
                     <div class="form-group">
                         <label for="name">Your Name</label>
                         <input type="text" id="name" name="name" value="<?php echo isset($_POST['name']) ? sanitize($_POST['name']) : ''; ?>" required>

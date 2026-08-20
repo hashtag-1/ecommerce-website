@@ -76,6 +76,7 @@ $categories = getAllCategories();
                                 <a href="product.php?id=<?php echo $product['id']; ?>" class="btn btn-secondary btn-sm">View Details</a>
                                 <?php if (isLoggedIn()): ?>
                                     <form method="POST" action="cart.php" class="add-to-cart-form">
+                                        <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
                                         <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
                                         <input type="hidden" name="quantity" value="1">
                                         <button type="submit" name="add_to_cart" class="btn btn-primary btn-sm add-to-cart-btn">Add to Cart</button>
