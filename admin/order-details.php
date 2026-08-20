@@ -123,16 +123,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_status'])) {
                             <h3 style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--primary);">Payment Details</h3>
                             <div class="admin-info-row"><span class="label">Payment Method:</span><span class="value"><?php echo sanitize($order['payment_method']); ?></span></div>
                             <?php if ($order['payment_method'] === 'eSewa' || $order['payment_method'] === 'Khalti'): ?>
-                                <?php if (!empty($order['receipt_path'])): ?>
+                                <?php if (!empty($order['receipt_data'])): ?>
                                     <div class="admin-info-row">
                                         <span class="label">Receipt:</span>
                                         <span class="value">
                                             <?php if ($order['receipt_type'] === 'pdf'): ?>
-                                                <a href="../<?php echo sanitize($order['receipt_path']); ?>" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none;">
+                                                <a href="data:<?php echo sanitize($order['receipt_mime']); ?>;base64,<?php echo sanitize($order['receipt_data']); ?>" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none;">
                                                     <i class="fas fa-file-pdf"></i> View PDF Receipt
                                                 </a>
                                             <?php else: ?>
-                                                <img src="../<?php echo sanitize($order['receipt_path']); ?>" alt="Payment Receipt" style="max-width: 200px; height: auto; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer;" onclick="window.open('../<?php echo sanitize($order['receipt_path']); ?>', '_blank')">
+                                                <img src="data:<?php echo sanitize($order['receipt_mime']); ?>;base64,<?php echo sanitize($order['receipt_data']); ?>" alt="Payment Receipt" style="max-width: 200px; height: auto; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer;" onclick="window.open('data:<?php echo sanitize($order['receipt_mime']); ?>;base64,<?php echo sanitize($order['receipt_data']); ?>', '_blank')">
                                             <?php endif; ?>
                                         </span>
                                     </div>

@@ -136,7 +136,7 @@ function clearCart($user_id) {
 // Order Functions
 // ============================================
 
-function placeOrder($user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $payment_method = 'Cash on Delivery', $receipt_path = null, $receipt_type = null) {
+function placeOrder($user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $payment_method = 'Cash on Delivery', $receipt_data = null, $receipt_mime = null, $receipt_type = null) {
     global $db;
     
     $db->beginTransaction();
@@ -156,10 +156,10 @@ function placeOrder($user_id, $customer_name, $customer_email, $customer_phone, 
         $total_amount = $subtotal + $delivery_fee;
         
         $stmt = $db->prepare("
-            INSERT INTO orders (user_id, customer_name, customer_email, customer_phone, customer_address, total_amount, delivery_fee, payment_method, receipt_path, receipt_type)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO orders (user_id, customer_name, customer_email, customer_phone, customer_address, total_amount, delivery_fee, payment_method, receipt_data, receipt_mime, receipt_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
-        $stmt->execute([$user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $total_amount, $delivery_fee, $payment_method, $receipt_path, $receipt_type]);
+        $stmt->execute([$user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $total_amount, $delivery_fee, $payment_method, $receipt_data, $receipt_mime, $receipt_type]);
         $order_id = $db->lastInsertId();
         
         foreach ($cart_items as $item) {

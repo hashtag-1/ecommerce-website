@@ -37,7 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
     } elseif (!validatePhone($customer_phone)) {
         $error = 'Please enter a valid 10-digit phone number';
     } else {
-        $receipt_path = null;
+        $receipt_data = null;
+        $receipt_mime = null;
         $receipt_type = null;
         
         if ($payment_method === 'eSewa' || $payment_method === 'Khalti') {
@@ -54,28 +55,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
                 } elseif ($file['size'] > $max_size) {
                     $error = 'File size exceeds 5MB limit.';
                 } else {
-                    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-                    $filename = uniqid('receipt_', true) . '.' . $ext;
-                    $upload_dir = __DIR__ . '/uploads/receipts/';
-                    
-                    if (!is_dir($upload_dir)) {
-                        mkdir($upload_dir, 0755, true);
-                    }
-                    
-                    $destination = $upload_dir . $filename;
-                    
-                    if (move_uploaded_file($file['tmp_name'], $destination)) {
-                        $receipt_path = 'uploads/receipts/' . $filename;
-                        $receipt_type = ($mime_type === 'application/pdf') ? 'pdf' : 'image';
-                    } else {
-                        $error = 'Failed to upload receipt. Please try again.';
-                    }
+                    $receipt_mime = $mime_type;
+                    $receipt_type = ($mime_type === 'application/pdf') ? 'pdf' : 'image';
+                    $receipt_data = base64_encode(file_get_contents($file['tmp_name']));
                 }
             }
         }
         
         if (empty($error)) {
-            $order_id = placeOrder($user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $payment_method, $receipt_path, $receipt_type);
+            $order_id = placeOrder($user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $payment_method, $receipt_data, $receipt_mime, $receipt_type);
             if ($order_id) {
                 setFlashMessage('Order placed successfully! Order ID: ORD' . date('Ymd') . str_pad($order_id, 4, '0', STR_PAD_LEFT), 'success');
                 redirect('orders.php');
