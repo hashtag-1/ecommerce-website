@@ -340,8 +340,25 @@ function getAllUsers() {
 
 function deleteUser($id) {
     global $db;
-    $stmt = $db->prepare("DELETE FROM users WHERE id = ?");
-    return $stmt->execute([$id]);
+    try {
+        // Remove related order items for this user's orders first
+        $stmt = $db->prepare("
+            DELETE oi FROM order_items oi
+            JOIN orders o ON oi.order_id = o.id
+            WHERE o.user_id = ?
+        ");
+        $stmt->execute([$id]);
+
+        // Remove this user's orders (cart and wishlist cascade via FK)
+        $stmt = $db->prepare("DELETE FROM orders WHERE user_id = ?");
+        $stmt->execute([$id]);
+
+        // Finally remove the user
+        $stmt = $db->prepare("DELETE FROM users WHERE id = ?");
+        return $stmt->execute([$id]);
+    } catch (PDOException $e) {
+        return false;
+    }
 }
 
 function getAllOrdersForAdmin() {
