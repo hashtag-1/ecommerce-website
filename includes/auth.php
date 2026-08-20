@@ -126,6 +126,16 @@ function getCartItems($user_id) {
     return $stmt->fetchAll();
 }
 
+function removeCartItemsByProductIds($user_id, $product_ids) {
+    global $db;
+    if (empty($product_ids)) {
+        return true;
+    }
+    $placeholders = implode(',', array_fill(0, count($product_ids), '?'));
+    $stmt = $db->prepare("DELETE FROM cart WHERE user_id = ? AND product_id IN ($placeholders)");
+    return $stmt->execute(array_merge([$user_id], $product_ids));
+}
+
 function clearCart($user_id) {
     global $db;
     $stmt = $db->prepare("DELETE FROM cart WHERE user_id = ?");
@@ -136,7 +146,7 @@ function clearCart($user_id) {
 // Order Functions
 // ============================================
 
-function placeOrder($user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $payment_method = 'Cash on Delivery', $receipt_data = null, $receipt_mime = null, $receipt_type = null) {
+function placeOrder($user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $payment_method = 'Cash on Delivery', $receipt_data = null, $receipt_mime = null, $receipt_type = null, $selected_product_ids = null) {
     global $db;
     
     $db->beginTransaction();
@@ -145,6 +155,33 @@ function placeOrder($user_id, $customer_name, $customer_email, $customer_phone, 
         $cart_items = getCartItems($user_id);
         if (empty($cart_items)) {
             throw new Exception('Cart is empty');
+        }
+        
+        $valid_product_ids = null;
+        if ($selected_product_ids !== null && is_array($selected_product_ids)) {
+            $selected_product_ids = array_map('intval', $selected_product_ids);
+            $selected_product_ids = array_unique(array_filter($selected_product_ids, function($id) { return $id > 0; }));
+            
+            if (empty($selected_product_ids)) {
+                throw new Exception('No valid items selected for checkout');
+            }
+            
+            $placeholders = implode(',', array_fill(0, count($selected_product_ids), '?'));
+            $stmt = $db->prepare("SELECT product_id FROM cart WHERE user_id = ? AND product_id IN ($placeholders)");
+            $stmt->execute(array_merge([$user_id], $selected_product_ids));
+            $valid_product_ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            if (empty($valid_product_ids)) {
+                throw new Exception('No valid cart items selected');
+            }
+            
+            $cart_items = array_values(array_filter($cart_items, function($item) use ($valid_product_ids) {
+                return in_array($item['product_id'], $valid_product_ids);
+            }));
+            
+            if (empty($cart_items)) {
+                throw new Exception('No valid cart items selected');
+            }
         }
         
         $subtotal = 0;
@@ -183,7 +220,11 @@ function placeOrder($user_id, $customer_name, $customer_email, $customer_phone, 
             $stmt->execute([$item['quantity'], $item['product_id']]);
         }
         
-        clearCart($user_id);
+        if ($valid_product_ids !== null && !empty($valid_product_ids)) {
+            removeCartItemsByProductIds($user_id, $valid_product_ids);
+        } else {
+            clearCart($user_id);
+        }
         
         $db->commit();
         return $order_id;

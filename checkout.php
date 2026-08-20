@@ -11,14 +11,37 @@ if (!isLoggedIn()) {
 
 $user_id = $_SESSION['user_id'];
 $cart_items = getCartItems($user_id);
+$delivery_fee = 50.00;
 
 if (empty($cart_items)) {
     setFlashMessage('Your cart is empty', 'error');
     redirect('cart.php');
 }
 
-$cart_total = getCartTotal($user_id);
-$delivery_fee = 50.00;
+$selected_items = [];
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['selected_items'])) {
+    $selected_items = array_map('intval', $_POST['selected_items']);
+    $selected_items = array_unique(array_filter($selected_items, function($id) { return $id > 0; }));
+    
+    if (empty($selected_items)) {
+        setFlashMessage('Please select at least one item to checkout.', 'error');
+        redirect('cart.php');
+    }
+    
+    $cart_items = array_values(array_filter($cart_items, function($item) use ($selected_items) {
+        return in_array($item['product_id'], $selected_items);
+    }));
+    
+    if (empty($cart_items)) {
+        setFlashMessage('No valid items selected for checkout.', 'error');
+        redirect('cart.php');
+    }
+}
+
+$cart_total = 0;
+foreach ($cart_items as $item) {
+    $cart_total += $item['subtotal'];
+}
 $grand_total = $cart_total + $delivery_fee;
 
 $error = '';
@@ -68,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
         }
         
         if (empty($error)) {
-            $order_id = placeOrder($user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $payment_method, $receipt_data, $receipt_mime, $receipt_type);
+            $order_id = placeOrder($user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $payment_method, $receipt_data, $receipt_mime, $receipt_type, !empty($selected_items) ? $selected_items : null);
             if ($order_id) {
                 setFlashMessage('Order placed successfully! Order ID: ORD' . date('Ymd') . str_pad($order_id, 4, '0', STR_PAD_LEFT), 'success');
                 redirect('orders.php');
@@ -99,6 +122,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['place_order'])) {
         <?php endif; ?>
         
         <form method="POST" action="" enctype="multipart/form-data">
+            <?php if (!empty($selected_items)): ?>
+                <?php foreach ($selected_items as $pid): ?>
+                    <input type="hidden" name="selected_items[]" value="<?php echo (int)$pid; ?>">
+                <?php endforeach; ?>
+            <?php endif; ?>
             <div class="checkout-grid">
                 <div>
                     <!-- Customer Information -->

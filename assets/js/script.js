@@ -193,6 +193,67 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // === Cart Checkout Selection ===
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const itemCheckboxes = document.querySelectorAll('.cart-item-checkbox');
+    const checkoutForm = document.getElementById('checkout-selection-form');
+    
+    if (selectAllCheckbox && itemCheckboxes.length > 0) {
+        function updateSelectAllState() {
+            const checkedCount = Array.from(itemCheckboxes).filter(function(cb) { return cb.checked; }).length;
+            selectAllCheckbox.checked = checkedCount === itemCheckboxes.length;
+            selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < itemCheckboxes.length;
+        }
+        
+        selectAllCheckbox.addEventListener('change', function() {
+            itemCheckboxes.forEach(function(cb) {
+                cb.checked = selectAllCheckbox.checked;
+            });
+        });
+        
+        itemCheckboxes.forEach(function(cb) {
+            cb.addEventListener('change', updateSelectAllState);
+        });
+        
+        updateSelectAllState();
+    }
+    
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', function(e) {
+            const checkedBoxes = document.querySelectorAll('.cart-item-checkbox:checked');
+            if (checkedBoxes.length === 0) {
+                e.preventDefault();
+                alert('Please select at least one item to checkout.');
+            }
+        });
+    }
+    
+    const proceedCheckoutBtn = document.getElementById('proceed-checkout-btn');
+    if (proceedCheckoutBtn) {
+        proceedCheckoutBtn.addEventListener('click', function() {
+            const checkedBoxes = document.querySelectorAll('.cart-item-checkbox:checked');
+            if (checkedBoxes.length === 0) {
+                alert('Please select at least one item to checkout.');
+                return;
+            }
+            
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = 'checkout.php';
+            
+            checkedBoxes.forEach(function(cb) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'selected_items[]';
+                input.value = cb.value;
+                form.appendChild(input);
+            });
+            
+            document.body.appendChild(form);
+            form.submit();
+        });
+    }
+    
     // === Add to cart animation ===
     const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
     

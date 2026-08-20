@@ -94,6 +94,7 @@ $grand_total = $cart_total + $delivery_fee;
                                 <th>Quantity</th>
                                 <th>Subtotal</th>
                                 <th>Action</th>
+                                <th style="text-align: center;">Select to checkout<br><input type="checkbox" id="selectAll" title="Select all"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -128,6 +129,9 @@ $grand_total = $cart_total + $delivery_fee;
                                             <i class="fas fa-trash"></i>
                                         </a>
                                     </td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" name="selected_items[]" value="<?php echo $item['product_id']; ?>" class="cart-item-checkbox" checked>
+                                    </td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -151,9 +155,9 @@ $grand_total = $cart_total + $delivery_fee;
                             <span class="value">Rs. <?php echo number_format($grand_total, 2); ?></span>
                         </div>
                         
-                        <a href="checkout.php" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 20px; display: block; text-align: center;">
+                        <button type="button" id="proceed-checkout-btn" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 20px; display: block; text-align: center;">
                             Proceed to Checkout
-                        </a>
+                        </button>
                         <a href="products.php" class="btn btn-secondary" style="width: 100%; margin-top: 10px; display: block; text-align: center;">
                             Continue Shopping
                         </a>
