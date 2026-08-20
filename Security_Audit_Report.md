@@ -408,4 +408,219 @@ A focused authentication security audit was performed on the Seed2Greens e-comme
 
 ---
 
+## SQL Injection
+
+### Methodology
+
+Every PHP file in the project was inspected for SQL query construction. User input from `$_GET`, `$_POST`, `$_FILES`, and `$_COOKIE` was traced from its entry point through to the final SQL execution. All queries were verified to use PDO prepared statements with correctly bound parameters. The PDO connection was confirmed to have `ATTR_EMULATE_PREPARES => false`, ensuring real server-side prepared statements are used rather than client-side emulation. No `mysql_query`, `mysqli_query`, or string-concatenated SQL was found.
+
+---
+
+### 1. PDO Configuration
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `config/database.php:37-55` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | PDO is configured with `ATTR_EMULATE_PREPARES => false`, `ATTR_ERRMODE => ERRMODE_EXCEPTION`, and `ATTR_DEFAULT_FETCH_MODE => FETCH_ASSOC`. This ensures prepared statements are executed server-side by MySQL, preventing any client-side emulation bypasses. |
+| **Verification** | Inspect `config/database.php` options array. |
+| **Status** | **Already Secure** |
+
+---
+
+### 2. Login Inputs (Email/Username, Password)
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/auth.php:loginUser()`, `includes/auth.php:loginAdmin()` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | `loginUser()` binds `$email` via `SELECT * FROM users WHERE email = ?`. `loginAdmin()` binds `$username` via `SELECT * FROM admin WHERE username = ?`. Both use PDO prepared statements. No string concatenation. |
+| **Verification** | Confirm `$stmt->execute([$email])` and `$stmt->execute([$username])` use bound parameters. |
+| **Status** | **Already Secure** |
+
+---
+
+### 3. Registration Inputs (Name, Email, Phone, Password, Address)
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/auth.php:registerUser()` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | `registerUser()` uses `INSERT INTO users (name, email, phone, password, address) VALUES (?, ?, ?, ?, ?)` with all five values bound via `$stmt->execute([$name, $email, $phone, $hashed_password, $address])`. No user input is concatenated into the SQL string. |
+| **Verification** | Confirm all five fields are bound as parameters. |
+| **Status** | **Already Secure** |
+
+---
+
+### 4. Product/Category IDs and Search Inputs
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/functions.php:getProductById()`, `getCategoryById()`, `searchProducts()`, `getProductsByCategory()`, `products.php`, `category.php`, `product.php`, `search.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | All product/category lookups cast IDs to `(int)` before binding. `searchProducts()` builds `WHERE p.name LIKE ? OR p.description LIKE ?` with bound parameters containing `%$search_term%` wildcards. The `%` wildcards are inside the bound value, not the SQL string. `getProductsByCategory()` appends `LIMIT ?` dynamically but binds it safely. No string concatenation of user input into SQL. |
+| **Verification** | Inspect `searchProducts()` parameter binding; confirm `$search_term` is never interpolated into `$sql`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 5. Order IDs and Customer Lookups
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/functions.php:getOrderById()`, `getOrderReceipt()`, `getOrderItems()`, `getUserOrders()`, `getCustomerById()`, `order-details.php`, `admin/order-details.php`, `admin/customer-details.php`, `admin/receipt.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | All order and customer lookups cast IDs to `(int)$_GET['id']` and bind via prepared statements (`WHERE id = ?`, `WHERE user_id = ?`). No user-controlled ID is concatenated into SQL. |
+| **Verification** | Confirm `$order_id = (int)$_GET['id']` and `$stmt->execute([$order_id])` pattern in all relevant files. |
+| **Status** | **Already Secure** |
+
+---
+
+### 6. Admin Search and Filter Inputs
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/functions.php:getOrders()`, `getOrdersCount()`, `admin/orders.php`, `admin/products.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | `getOrders()` dynamically builds a `WHERE` clause from `$search` and `$status`, but all values are appended to a `$params` array and bound via `$stmt->execute($params)`. Column names in the WHERE clause are hardcoded (`o.id`, `o.customer_name`, `o.customer_email`, `o.status`). `admin/products.php` search uses `WHERE p.name LIKE ? OR p.description LIKE ?` with bound parameters. No user input is concatenated into the SQL structure. |
+| **Verification** | Inspect `getOrders()` dynamic SQL building; confirm only `?` placeholders and hardcoded column names are in the SQL string. |
+| **Status** | **Already Secure** |
+
+---
+
+### 7. Dynamic IN Clauses
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/auth.php:removeCartItemsByProductIds()`, `placeOrder()`, `includes/functions.php:setManualFeaturedReviews()` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Dynamic `IN` clauses are built safely: `$placeholders = implode(',', array_fill(0, count($ids), '?'))`. The placeholders are static `?` strings; the actual IDs are passed as bound parameters via `$stmt->execute($ids)`. In `placeOrder()`, IDs are pre-sanitized with `array_map('intval', ...)`. No user input is interpolated into the SQL string. |
+| **Verification** | Confirm `$placeholders` contains only `?` characters and values are passed to `execute()` as an array. |
+| **Status** | **Already Secure** |
+
+---
+
+### 8. Review Inputs (Name, Rating, Review Text)
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/functions.php:addReview()`, `api/submit_review.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | `addReview()` uses `INSERT INTO reviews (name, email, rating, review, status) VALUES (?, ?, ?, ?, 'active')` with all values bound. The API endpoint passes user input directly to this function without any SQL concatenation. |
+| **Verification** | Confirm `$stmt->execute([$name, $email, (int)$rating, $reviewText])` uses bound parameters. |
+| **Status** | **Already Secure** |
+
+---
+
+### 9. Admin Product/Category/Review Management Inputs
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/auth.php:addProduct()`, `updateProduct()`, `deleteProduct()`, `addCategory()`, `updateCategory()`, `deleteCategory()`, `admin/edit-product.php`, `admin/add-product.php`, `admin/categories.php`, `admin/reviews.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | All admin CRUD operations use prepared statements with bound parameters. Admin search in `admin/products.php` uses `LIKE ?` with bound values. No admin input is concatenated into SQL strings. |
+| **Verification** | Inspect all admin CRUD functions; confirm all user-supplied values are bound as parameters. |
+| **Status** | **Already Secure** |
+
+---
+
+### 10. Static Admin Statistics Queries
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/functions.php:getAdminStats()` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | `getAdminStats()` uses `$db->query()` with fully static SQL strings (`SELECT COUNT(*) as count FROM orders`, etc.). No user input is present. |
+| **Verification** | Confirm all queries in `getAdminStats()` contain no user-controlled variables. |
+| **Status** | **Already Secure** |
+
+---
+
+### 11. DDL / Schema Modification in placeOrder()
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/auth.php:placeOrder()` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | `placeOrder()` conditionally executes `ALTER TABLE orders ADD COLUMN ...` if receipt columns are missing. The SQL is fully hardcoded with no user input. While runtime DDL is architecturally unusual, it does not introduce SQL injection. |
+| **Verification** | Confirm the ALTER TABLE string contains no variables. |
+| **Status** | **Already Secure** |
+
+---
+
+### 12. .env Values and DSN Construction
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `config/database.php:loadEnv()`, DSN construction |
+| **Root Cause** | N/A |
+| **Exploitable** | Requires Manual Verification |
+| **Severity** | Informational |
+| **Impact** | Database credentials are loaded from `.env` and interpolated into the PDO DSN string (`mysql:host=...;dbname=...`). The `.env` file is gitignored and server-side only, so it is not directly user-controlled via HTTP. However, if the `.env` file were compromised (e.g., via server misconfiguration, backup exposure, or CI/CD leak), an attacker could manipulate the DSN. This is a supply-chain / configuration risk, not an HTTP-driven SQL injection. |
+| **Verification** | Verify `.env` is not web-accessible, not included in backups, and has strict filesystem permissions (e.g., `600`). Confirm no user-controlled input reaches `loadEnv()` or DSN construction. |
+| **Status** | **Requires Manual Verification** |
+
+---
+
+### 13. Second-Order SQL Injection Check
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | All insert/update functions and subsequent queries |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | User input stored in the database (product names, descriptions, review text, order customer details) is never later concatenated into SQL queries. All subsequent queries that reference stored data (e.g., `searchProducts()` searching product names, `getOrders()` searching customer names/emails) use bound parameters with `LIKE ?`. No second-order injection path exists. |
+| **Verification** | For each table containing user input (`users`, `products`, `reviews`, `orders`), verify that stored values are only ever used as bound parameters in subsequent queries. |
+| **Status** | **Already Secure** |
+
+---
+
+## Summary
+
+**No SQL injection vulnerabilities were identified in the Seed2Greens codebase.**
+
+All database interactions use PDO prepared statements with correctly bound parameters. The PDO connection is configured with `ATTR_EMULATE_PREPARES => false`, ensuring true server-side prepared statements. Dynamic query construction (WHERE clauses, IN lists, LIMIT/OFFSET) is handled safely by appending `?` placeholders and binding values via the `$params` array. No string concatenation, `sprintf`, or variable interpolation was found in any SQL statement.
+
+One configuration item requires manual verification: the `.env` file should be confirmed as non-web-accessible and properly permissioned to prevent supply-chain DSN manipulation.
+
+## Files Modified
+
+| File | Changes |
+|------|---------|
+| None — no SQL injection vulnerabilities were found to fix. |
+
+---
+
+## Recommendations
+
+1. **Maintain `ATTR_EMULATE_PREPARES => false`** in `config/database.php`. Do not remove or change this setting.
+2. **Audit `.env` exposure** as noted above; ensure it is never accessible via web root and has restrictive filesystem permissions.
+3. **Continue using prepared statements** for all new queries. Avoid any future string concatenation in SQL.
+4. **Consider a static analysis tool** (e.g., PHPStan with security rules, or Psalm) in CI to automatically flag any SQL string concatenation or non-parameterized queries.
+
+---
+
 *End of Report*
