@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // === Quantity Controls ===
-    const quantityInputs = document.querySelectorAll('.quantity-control input');
+    const quantityInputs = document.querySelectorAll('.quantity-control input:not(.cart-quantity-input)');
     
     quantityInputs.forEach(function(input) {
         const minusBtn = input.previousElementSibling;
