@@ -10,11 +10,11 @@ if (!isAdminLoggedIn()) {
 $currentMode = getFeaturedMode();
 $allReviews = getAllReviews();
 
-if (isset($_GET['delete'])) {
-    if (!validateCsrfToken($_GET['csrf_token'] ?? '')) {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_review'])) {
+    if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
         setFlashMessage('Invalid security token. Please try again.', 'error');
     } else {
-        $del_id = (int)$_GET['delete'];
+        $del_id = (int)$_POST['delete'];
         $review = getReviewById($del_id);
         if ($review) {
             deleteReview($del_id);
@@ -237,7 +237,36 @@ $activeTab = $_GET['tab'] ?? 'delete';
         }
 
         function doDeleteReview() {
-            window.location.href = 'reviews.php?delete=' + encodeURIComponent(deleteReviewTargetId) + '&csrf_token=' + encodeURIComponent(deleteReviewCsrfToken) + '&tab=delete';
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = 'reviews.php';
+            
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = deleteReviewCsrfToken;
+            form.appendChild(csrfInput);
+            
+            const deleteInput = document.createElement('input');
+            deleteInput.type = 'hidden';
+            deleteInput.name = 'delete';
+            deleteInput.value = deleteReviewTargetId;
+            form.appendChild(deleteInput);
+            
+            const submitInput = document.createElement('input');
+            submitInput.type = 'hidden';
+            submitInput.name = 'delete_review';
+            submitInput.value = '1';
+            form.appendChild(submitInput);
+            
+            const tabInput = document.createElement('input');
+            tabInput.type = 'hidden';
+            tabInput.name = 'tab';
+            tabInput.value = 'delete';
+            form.appendChild(tabInput);
+            
+            document.body.appendChild(form);
+            form.submit();
         }
 
         function openDeleteReviewModal() {

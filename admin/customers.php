@@ -7,11 +7,12 @@ if (!isAdminLoggedIn()) {
     redirect('login.php');
 }
 
-if (isset($_GET['delete'])) {
-    if (!validateCsrfToken($_GET['csrf_token'] ?? '')) {
+// Handle Delete
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_customer'])) {
+    if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
         setFlashMessage('Invalid security token. Please try again.', 'error');
     } else {
-        $del_id = (int)$_GET['delete'];
+        $del_id = (int)$_POST['delete'];
         deleteUser($del_id);
         setFlashMessage('User deleted successfully', 'success');
     }
@@ -141,7 +142,30 @@ $users = getAllUsers();
         }
 
         function doDeleteUser() {
-            window.location.href = 'customers.php?delete=' + encodeURIComponent(deleteUserTargetId) + '&csrf_token=' + encodeURIComponent(deleteUserCsrfToken);
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = 'customers.php';
+            
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = deleteUserCsrfToken;
+            form.appendChild(csrfInput);
+            
+            const deleteInput = document.createElement('input');
+            deleteInput.type = 'hidden';
+            deleteInput.name = 'delete';
+            deleteInput.value = deleteUserTargetId;
+            form.appendChild(deleteInput);
+            
+            const submitInput = document.createElement('input');
+            submitInput.type = 'hidden';
+            submitInput.name = 'delete_customer';
+            submitInput.value = '1';
+            form.appendChild(submitInput);
+            
+            document.body.appendChild(form);
+            form.submit();
         }
 
         function openDeleteUserModal() {

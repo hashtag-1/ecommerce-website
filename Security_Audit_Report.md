@@ -1779,4 +1779,216 @@ The router routes ALL `.php` files via `api/index.php?file=<path>`, making every
 
 ---
 
+## Admin Panel Security
+
+### Methodology
+
+All admin panel files were inspected for authentication, authorization, session handling, route protection, and access control. Every admin endpoint, CRUD operation, and the receipt serving mechanism were verified to ensure that:
+- Admin authentication is required and enforced
+- Admin sessions are separate from customer sessions
+- No customer can invoke admin operations
+- CSRF protection is present on all state-changing operations
+- Receipts and sensitive data are only accessible to authenticated admins
+- Password/username changes require current password validation
+
+---
+
+### 1. Admin Authentication and Session Separation
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/auth.php:loginAdmin()`, `isAdminLoggedIn()`, `logoutAdmin()` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Admin authentication uses completely separate session keys from customer authentication: `admin_id`, `admin_name`, `admin_username` vs `user_id`, `user_name`, `user_email`, etc. `isAdminLoggedIn()` checks only `admin_id`. A customer login does NOT set any admin session keys. Admin login calls `session_regenerate_id(true)` to prevent session fixation. Rate limiting is enforced via `checkLoginRateLimit('admin')`. Admin login error message is generic ("Invalid username or password") to prevent username enumeration. |
+| **Verification** | Confirm `loginAdmin()` sets only `admin_*` session keys. Confirm `isAdminLoggedIn()` checks only `admin_id`. Confirm `isLoggedIn()` checks only `user_id`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 2. Admin Route Protection
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `admin/*.php` (all admin entry points) |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Every admin page (`dashboard.php`, `orders.php`, `products.php`, `customers.php`, `reviews.php`, `settings.php`, `order-details.php`, `receipt.php`, `users.php`, `customer-details.php`, `add-product.php`, `edit-product.php`, `categories.php`, `login.php`) enforces `isAdminLoggedIn()` at the very top of the file before any output or logic. If not authenticated, the admin is redirected to `admin/login.php`. The admin login page itself redirects already-authenticated admins to the dashboard. |
+| **Verification** | Attempt to access any `admin/*.php` without an admin session; should redirect to `admin/login.php`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 3. Customer Cannot Invoke Admin Operations
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | All `admin/*.php` endpoints |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Admin and customer authentication use separate, non-overlapping session keys. A customer with a valid `user_id` session has no `admin_id` key. All admin endpoints check `isAdminLoggedIn()`, which returns `false` for customer sessions. Even if a customer manually constructs admin URLs (e.g., `admin/dashboard.php`, `admin/order-details.php?id=1`, `admin/receipt.php?id=1`), they will be redirected to the admin login page. |
+| **Verification** | Login as a normal customer, then attempt to directly access any admin endpoint. All should redirect to `admin/login.php` or return 403. |
+| **Status** | **Already Secure** |
+
+---
+
+### 4. Admin GET-Based Delete Actions With CSRF Token in URL
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `admin/users.php:14-23`, `admin/customers.php:10-19`, `admin/categories.php:40-52`, `admin/reviews.php:13-27` |
+| **Root Cause** | Admin delete actions (users, customers, categories, reviews) used GET requests with CSRF tokens passed as query parameters (`?delete=<id>&csrf_token=<token>`). While this provides CSRF protection, it is an anti-pattern because: (1) GET should be safe/idempotent per HTTP semantics, (2) CSRF tokens in URLs are logged in server access logs, browser history, and `Referer` headers, (3) GET requests can be triggered by image tags, link prefetching, or CSRF with token theft. |
+| **Exploitable** | No (CSRF token provides protection) |
+| **Severity** | Low |
+| **Impact** | Defense-in-depth risk. If an attacker can read server logs or `Referer` headers, they could extract CSRF tokens and forge delete requests. The current implementation is not vulnerable to standard CSRF, but token exposure in URLs weakens security posture. Additionally, these operations should be POST-only per HTTP semantics. |
+| **Verification** | Inspect admin pages for delete links with `csrf_token` in query string. Check server logs for token exposure. |
+| **Fix Applied** | Converted all admin delete actions from GET to POST with CSRF tokens in form body:
+- `admin/users.php`: Delete button now submits a POST form
+- `admin/customers.php`: Modal JS now creates and submits a POST form
+- `admin/categories.php`: Delete button now submits a POST form
+- `admin/reviews.php`: Modal JS now creates and submits a POST form
+CSRF tokens are no longer exposed in URLs. |
+| **Re-test Result** | Verified: All 4 modified admin files pass PHP syntax checks. Delete actions now use `$_POST` with CSRF validation. No `$_GET['delete']` handlers remain in these files. |
+| **Status** | **Fixed** |
+
+---
+
+### 5. Admin Receipt Access Authorization
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `admin/receipt.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Receipts are served only to authenticated admins (`isAdminLoggedIn()`). The endpoint accepts only `id` (integer order ID) and returns the base64 receipt blob with the correct `Content-Type` from the database. No customer can access receipts. The `Content-Disposition` filename is constructed from the integer `$order_id`, preventing path traversal. |
+| **Verification** | Access `admin/receipt.php?id=1` without admin session; should return 403. |
+| **Status** | **Already Secure** |
+
+---
+
+### 6. Admin Password and Username Change Flow
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `admin/settings.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Admin settings page requires current password for any change. New username is validated for uniqueness (checks `admin` table for existing username excluding current admin). Password changes require `validatePasswordStrength()` (8+ chars, upper/lower/number). CSRF token is validated. Session is updated with new username on success. |
+| **Verification** | Attempt to submit settings form without current password; should be rejected. Attempt to set username to an existing admin's username; should be rejected. |
+| **Status** | **Already Secure** |
+
+---
+
+### 7. Admin Session Handling
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/auth.php:loginAdmin()`, `logoutAdmin()` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Admin login calls `session_regenerate_id(true)` to prevent session fixation. Admin logout fully destroys the session (`$_SESSION = []`, delete session cookie, `session_destroy()`). Session cookie flags (`HttpOnly`, `SameSite`, `Secure`) are set in `includes/functions.php`. Admin sessions use separate keys from customer sessions. |
+| **Verification** | Confirm `session_regenerate_id(true)` is called in `loginAdmin()`. Confirm `logoutAdmin()` destroys session and cookie. |
+| **Status** | **Already Secure** |
+
+---
+
+### 8. Admin Product Management Authorization
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `admin/add-product.php`, `admin/edit-product.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Both product add and edit pages enforce `isAdminLoggedIn()`. Product creation and updates use POST with CSRF validation. Inputs are sanitized and validated (category_id as int, price as float, stock as int). Product delete is handled via POST with CSRF in `edit-product.php`. No customer can access these pages. |
+| **Verification** | Attempt to access `admin/add-product.php` or `admin/edit-product.php?id=1` without admin session; should redirect to admin login. |
+| **Status** | **Already Secure** |
+
+---
+
+### 9. Admin Order Management Authorization
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `admin/orders.php`, `admin/order-details.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Admin orders page and order details page enforce `isAdminLoggedIn()`. Order status updates use POST with CSRF validation. The new status is validated against the list of allowed statuses before updating. No customer can access these pages. |
+| **Verification** | Attempt to access `admin/orders.php` or `admin/order-details.php?id=1` without admin session; should redirect to admin login. |
+| **Status** | **Already Secure** |
+
+---
+
+### 10. Admin Review Management Authorization
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `admin/reviews.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Admin reviews page enforces `isAdminLoggedIn()`. Review deletion now uses POST with CSRF (converted from GET). Featured review mode changes use POST with CSRF. Manual review selection validates input. No customer can access this page. |
+| **Verification** | Attempt to access `admin/reviews.php` without admin session; should redirect to admin login. |
+| **Status** | **Already Secure** |
+
+---
+
+### 11. No Audit Trail for Admin Actions
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | All admin CRUD operations |
+| **Root Cause** | N/A |
+| **Exploitable** | Requires Manual Verification |
+| **Severity** | Informational |
+| **Impact** | There is no audit logging for admin actions (user deletion, product modification, order status changes, review deletion, settings changes). If an admin account is compromised, there is no forensic trail of what actions were taken. This is a compliance and incident-response gap, not a directly exploitable vulnerability. |
+| **Verification** | Check for any logging or audit table for admin actions. None exists. |
+| **Status** | **Requires Manual Verification** (consider implementing audit logging in future) |
+
+---
+
+## Summary
+
+**1 confirmed admin panel issue was identified and fixed.**
+
+| Category | Count | Status |
+|----------|-------|--------|
+| Admin GET-based deletes with CSRF token in URL | 1 | Fixed |
+| Admin authentication/session separation | 0 | Already Secure |
+| Admin route protection | 0 | Already Secure |
+| Customer access to admin operations | 0 | Already Secure |
+| Receipt authorization | 0 | Already Secure |
+| Admin password/username change | 0 | Already Secure |
+| Admin session handling | 0 | Already Secure |
+| Admin CRUD authorization | 0 | Already Secure |
+| Audit trail | 1 | Requires Manual Verification |
+
+**Files Modified**
+
+| File | Changes |
+|------|---------|
+| `admin/users.php` | Converted user delete from GET+CSRF URL to POST form with CSRF token |
+| `admin/customers.php` | Converted user delete from GET+CSRF URL to POST form; updated modal JS to submit form |
+| `admin/categories.php` | Converted category delete from GET+CSRF URL to POST form |
+| `admin/reviews.php` | Converted review delete from GET+CSRF URL to POST form; updated modal JS to submit form |
+
+---
+
+## Recommendations
+
+1. **Implement admin audit logging**: Log all admin actions (login, logout, CRUD operations, settings changes) with timestamp, admin ID, action type, and target resource ID.
+2. **Add admin role separation**: Consider implementing granular admin roles (e.g., super admin, product manager, order manager) to limit the blast radius of a compromised admin account.
+3. **Enforce HTTPS for admin panel**: Ensure the admin panel is only accessible via HTTPS with HSTS headers.
+4. **Add IP allowlisting for admin access**: Consider restricting admin panel access to known IP ranges for additional protection.
+5. **Implement admin session timeout**: Add an explicit session inactivity timeout for admin sessions (e.g., 30 minutes) with a warning before expiration.
+
+---
+
 *End of Report*

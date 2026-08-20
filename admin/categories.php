@@ -37,17 +37,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_category'])) {
 }
 
 // Handle Delete Category
-if (isset($_GET['delete'])) {
-    if (!validateCsrfToken($_GET['csrf_token'] ?? '')) {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_category'])) {
+    if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
         setFlashMessage('Invalid request. Please try again.', 'error');
         redirect('categories.php');
     }
-    $category_id = (int)$_GET['delete'];
+    $category_id = (int)$_POST['delete'];
     if (deleteCategory($category_id)) {
         setFlashMessage('Category deleted successfully', 'success');
         redirect('categories.php');
     } else {
         setFlashMessage('Failed to delete category', 'error');
+        redirect('categories.php');
     }
 }
 ?>
@@ -158,9 +159,13 @@ if (isset($_GET['delete'])) {
                                         </td>
                                         <td><?php echo date('M d, Y', strtotime($category['created_at'])); ?></td>
                                         <td>
-                                            <a href="categories.php?delete=<?php echo $category['id']; ?>&csrf_token=<?php echo urlencode(generateCsrfToken()); ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure? This will delete all products in this category.')">
-                                                <i class="fas fa-trash"></i> Delete
-                                            </a>
+                                            <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure? This will delete all products in this category.')">
+                                                <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
+                                                <input type="hidden" name="delete" value="<?php echo $category['id']; ?>">
+                                                <button type="submit" name="delete_category" class="btn btn-danger btn-sm">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

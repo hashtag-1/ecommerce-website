@@ -11,14 +11,14 @@ $page_title = 'Manage Users - Seed2Greens Admin';
 $users = getAllUsers();
 
 // Handle Delete
-if (isset($_GET['delete'])) {
-    if (!validateCsrfToken($_GET['csrf_token'] ?? '')) {
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_user'])) {
+    if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
         setFlashMessage('Invalid request. Please try again.', 'error');
-        redirect('users.php');
+    } else {
+        $user_id = (int)$_POST['delete'];
+        deleteUser($user_id);
+        setFlashMessage('User deleted successfully', 'success');
     }
-    $user_id = (int)$_GET['delete'];
-    deleteUser($user_id);
-    setFlashMessage('User deleted successfully', 'success');
     redirect('users.php');
 }
 ?>
@@ -91,9 +91,13 @@ if (isset($_GET['delete'])) {
                                         <td>
                                             <div class="admin-actions">
                                                 <a href="customer-details.php?id=<?php echo $user['id']; ?>" class="btn btn-primary btn-sm">View</a>
-                                                <a href="users.php?delete=<?php echo $user['id']; ?>&csrf_token=<?php echo urlencode(generateCsrfToken()); ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this user? This will delete their cart and wishlist. Orders will be preserved for records.')">
-                                                    <i class="fas fa-trash"></i>
-                                                </a>
+                                                <form method="POST" action="" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this user? This will delete their cart and wishlist. Orders will be preserved for records.')">
+                                                    <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
+                                                    <input type="hidden" name="delete" value="<?php echo $user['id']; ?>">
+                                                    <button type="submit" name="delete_user" class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
                                             </div>
                                         </td>
                                     </tr>
