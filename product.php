@@ -100,7 +100,7 @@ if (isLoggedIn()) {
     </div>
 </div>
 
-<script>
+<!-- <script>
 // Quantity controls for product detail
 document.querySelector('.qty-minus')?.addEventListener('click', function() {
     const input = document.getElementById('qtyInput');
@@ -120,6 +120,6 @@ document.querySelector('.qty-plus')?.addEventListener('click', function() {
         cartQty.value = input.value;
     }
 });
-</script>
+</script> -->
 
 <?php include __DIR__ . '/includes/footer.php'; ?>
