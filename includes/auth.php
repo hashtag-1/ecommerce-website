@@ -72,10 +72,18 @@ function loginAdmin($username, $password) {
     
     if ($admin && verifyPassword($password, $admin['password'])) {
         session_regenerate_id(true);
+        clearLoginAttempts('admin');
+        
+        if (!empty($admin['totp_enabled']) && !empty($admin['totp_secret'])) {
+            $_SESSION['admin_2fa_pending'] = true;
+            $_SESSION['admin_2fa_user_id'] = $admin['id'];
+            $_SESSION['admin_2fa_username'] = $admin['username'];
+            return 'pending_2fa';
+        }
+        
         $_SESSION['admin_id'] = $admin['id'];
         $_SESSION['admin_name'] = $admin['name'];
         $_SESSION['admin_username'] = $admin['username'];
-        clearLoginAttempts('admin');
         return true;
     }
     
@@ -93,8 +101,78 @@ function logoutAdmin() {
 }
 
 // ============================================
-// Cart Functions
+// Admin 2FA Helper Functions
 // ============================================
+
+function clearAdmin2FASession() {
+    unset($_SESSION['admin_2fa_pending']);
+    unset($_SESSION['admin_2fa_user_id']);
+    unset($_SESSION['admin_2fa_username']);
+    unset($_SESSION['admin_2fa_secret']);
+    unset($_SESSION['admin_2fa_backup_codes']);
+    unset($_SESSION['admin_totp_attempts']);
+    unset($_SESSION['admin_totp_lockout_until']);
+}
+
+function checkTOTPRateLimit() {
+    $lockoutUntil = $_SESSION['admin_totp_lockout_until'] ?? 0;
+    if ($lockoutUntil > 0 && time() < $lockoutUntil) {
+        return false;
+    }
+    
+    if ($lockoutUntil > 0 && time() >= $lockoutUntil) {
+        unset($_SESSION['admin_totp_lockout_until']);
+        unset($_SESSION['admin_totp_attempts']);
+    }
+    
+    if (!isset($_SESSION['admin_totp_attempts'])) {
+        $_SESSION['admin_totp_attempts'] = ['count' => 0, 'first_attempt' => time()];
+    }
+    
+    $data = $_SESSION['admin_totp_attempts'];
+    $window = 300;
+    $maxAttempts = 5;
+    
+    if (time() - $data['first_attempt'] > $window) {
+        $_SESSION['admin_totp_attempts'] = ['count' => 0, 'first_attempt' => time()];
+        return true;
+    }
+    
+    if ($data['count'] >= $maxAttempts) {
+        $_SESSION['admin_totp_lockout_until'] = time() + 900;
+        return false;
+    }
+    
+    return true;
+}
+
+function recordTOTPAttempt() {
+    if (!isset($_SESSION['admin_totp_attempts'])) {
+        $_SESSION['admin_totp_attempts'] = ['count' => 0, 'first_attempt' => time()];
+    }
+    $_SESSION['admin_totp_attempts']['count']++;
+}
+
+function clearTOTPAttempts() {
+    unset($_SESSION['admin_totp_attempts']);
+    unset($_SESSION['admin_totp_lockout_until']);
+}
+
+function completeAdminLogin($admin) {
+    session_regenerate_id(true);
+    $_SESSION['admin_id'] = $admin['id'];
+    $_SESSION['admin_name'] = $admin['name'];
+    $_SESSION['admin_username'] = $admin['username'];
+    clearAdmin2FASession();
+    clearTOTPAttempts();
+}
+
+function getAdminById($id) {
+    global $db;
+    $stmt = $db->prepare("SELECT * FROM admin WHERE id = ?");
+    $stmt->execute([(int) $id]);
+    return $stmt->fetch();
+}
 
 function addToCart($user_id, $product_id, $quantity = 1) {
     global $db;

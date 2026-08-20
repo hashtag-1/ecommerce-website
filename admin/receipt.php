@@ -5,11 +5,7 @@
 // exceeds Vercel Serverless Function payload limits.
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/auth.php';
-
-if (!isAdminLoggedIn()) {
-    http_response_code(403);
-    exit;
-}
+require_once __DIR__ . '/guard.php';
 
 if (!isset($_GET['id'])) {
     http_response_code(404);

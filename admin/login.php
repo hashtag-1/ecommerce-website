@@ -20,8 +20,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['admin_login'])) {
         if (empty($username) || empty($password)) {
             $error = 'Please enter username and password';
         } else {
-            if (loginAdmin($username, $password)) {
+            $result = loginAdmin($username, $password);
+            if ($result === true) {
                 redirect('dashboard.php');
+            } elseif ($result === 'pending_2fa') {
+                redirect('2fa-verify.php');
+            } elseif ($result === 'rate_limited') {
+                $error = 'Too many failed attempts. Please try again later.';
             } else {
                 $error = 'Invalid username or password';
             }

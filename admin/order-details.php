@@ -3,9 +3,7 @@
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/auth.php';
 
-if (!isAdminLoggedIn()) {
-    redirect('login.php');
-}
+require_once __DIR__ . '/guard.php';
 
 if (!isset($_GET['id'])) {
     redirect('orders.php');

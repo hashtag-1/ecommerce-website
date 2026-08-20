@@ -144,6 +144,9 @@ CREATE TABLE admin (
     password VARCHAR(255) NOT NULL,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL,
+    totp_secret VARCHAR(255) DEFAULT NULL,
+    totp_enabled TINYINT(1) DEFAULT 0,
+    backup_codes JSON DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

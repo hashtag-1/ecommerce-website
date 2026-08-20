@@ -44,6 +44,16 @@ function isAdminLoggedIn() {
     return isset($_SESSION['admin_id']) && !empty($_SESSION['admin_id']);
 }
 
+function isAdmin2FAPending() {
+    return isset($_SESSION['admin_2fa_pending']) && 
+           isset($_SESSION['admin_2fa_user_id']) && 
+           !empty($_SESSION['admin_2fa_pending']);
+}
+
+function getAdmin2FAUserId() {
+    return $_SESSION['admin_2fa_user_id'] ?? null;
+}
+
 function redirect($url) {
     header('Location: ' . $url);
     exit();

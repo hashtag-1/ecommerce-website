@@ -2,10 +2,9 @@
 // Seed2Greens - Admin Account Settings
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/2fa.php';
 
-if (!isAdminLoggedIn()) {
-    redirect('login.php');
-}
+require_once __DIR__ . '/guard.php';
 
 $page_title = 'Account Settings - Seed2Greens Admin';
 
@@ -20,6 +19,61 @@ $stmt->execute([$admin_id]);
 $admin = $stmt->fetch();
 
 $current_username = $admin['username'] ?? '';
+$totp_enabled = !empty($admin['totp_enabled']);
+$backup_codes = $admin['backup_codes'] ?? null;
+
+// Handle 2FA Enable
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['enable_2fa'])) {
+    if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid request. Please try again.';
+    } else {
+        $_SESSION['admin_2fa_pending'] = true;
+        $_SESSION['admin_2fa_user_id'] = $admin['id'];
+        $_SESSION['admin_2fa_username'] = $admin['username'];
+        $_SESSION['admin_2fa_secret'] = TwoFactorAuth::generateSecret();
+        redirect('2fa-setup.php');
+    }
+}
+
+// Handle 2FA Disable
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['disable_2fa'])) {
+    if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid request. Please try again.';
+    } else {
+        $current_password = $_POST['current_password'] ?? '';
+        $totp_code = preg_replace('/\s/', '', $_POST['totp_code'] ?? '');
+        $backup_code = strtoupper(trim($_POST['backup_code'] ?? ''));
+
+        if (empty($current_password)) {
+            $error = 'Please enter your current password.';
+        } elseif (!$admin || !verifyPassword($current_password, $admin['password'])) {
+            $error = 'Current password is incorrect.';
+        } else {
+            $verified = false;
+            if (!empty($totp_code) && !empty($admin['totp_secret'])) {
+                $verified = TwoFactorAuth::verifyTOTP($admin['totp_secret'], $totp_code);
+            } elseif (!empty($backup_code) && !empty($admin['backup_codes'])) {
+                $hashedCodes = json_decode($admin['backup_codes'], true) ?: [];
+                $matchIndex = TwoFactorAuth::verifyBackupCode($backup_code, $hashedCodes);
+                if ($matchIndex !== false) {
+                    TwoFactorAuth::removeBackupCode($hashedCodes, $matchIndex);
+                    $stmt = $db->prepare("UPDATE admin SET backup_codes = ? WHERE id = ?");
+                    $stmt->execute([json_encode(array_values($hashedCodes)), $admin_id]);
+                    $verified = true;
+                }
+            }
+
+            if (!$verified) {
+                $error = 'Invalid authentication code. Please enter a valid TOTP or backup code.';
+            } else {
+                $stmt = $db->prepare("UPDATE admin SET totp_secret = NULL, totp_enabled = 0, backup_codes = NULL WHERE id = ?");
+                $stmt->execute([$admin_id]);
+                setFlashMessage('Two-factor authentication has been disabled.', 'success');
+                redirect('settings.php');
+            }
+        }
+    }
+}
 
 // Handle Credential Update
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_credentials'])) {
@@ -159,6 +213,67 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_credentials']))
                         </div>
                         <button type="submit" name="update_credentials" class="btn btn-primary"><i class="fas fa-save"></i> Update Credentials</button>
                     </form>
+                </div>
+
+                <div class="admin-card" style="margin-top: 20px;">
+                    <h3 style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--primary);">
+                        <i class="fas fa-shield-alt"></i> Two-Factor Authentication
+                    </h3>
+                    
+                    <?php if ($totp_enabled): ?>
+                        <div style="background: #e8f5e9; color: #1b5e20; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+                            <i class="fas fa-check-circle"></i> Two-factor authentication is <strong>enabled</strong>.
+                        </div>
+                        
+                        <?php
+                        $backupCount = 0;
+                        if ($backup_codes) {
+                            $decoded = json_decode($backup_codes, true);
+                            $backupCount = is_array($decoded) ? count($decoded) : 0;
+                        }
+                        ?>
+                        <p style="color: var(--text-light); margin-bottom: 10px;">
+                            Backup codes remaining: <strong><?php echo $backupCount; ?></strong>
+                        </p>
+                        
+                        <form method="POST" action="" style="margin-top: 20px;">
+                            <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
+                            <h4 style="margin-bottom: 15px; font-size: 16px;">Disable Two-Factor Authentication</h4>
+                            <p style="color: var(--text-light); margin-bottom: 15px; font-size: 14px;">
+                                Enter your current password and an authentication code to disable 2FA.
+                            </p>
+                            <div class="admin-form-group">
+                                <label for="current_password_disable">Current Password *</label>
+                                <input type="password" id="current_password_disable" name="current_password" placeholder="Enter current password" required>
+                            </div>
+                            <div class="admin-grid-2">
+                                <div class="admin-form-group">
+                                    <label for="totp_code_disable">Authenticator Code</label>
+                                    <input type="text" id="totp_code_disable" name="totp_code" placeholder="6-digit code" maxlength="6" pattern="\d{6}">
+                                </div>
+                                <div class="admin-form-group">
+                                    <label for="backup_code_disable">Or Backup Code</label>
+                                    <input type="text" id="backup_code_disable" name="backup_code" placeholder="Backup code">
+                                </div>
+                            </div>
+                            <button type="submit" name="disable_2fa" class="btn btn-secondary" style="border-color: #c62828; color: #c62828;">
+                                <i class="fas fa-times-circle"></i> Disable 2FA
+                            </button>
+                        </form>
+                    <?php else: ?>
+                        <div style="background: #fff3e0; color: #e65100; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+                            <i class="fas fa-exclamation-triangle"></i> Two-factor authentication is <strong>not enabled</strong>.
+                        </div>
+                        <p style="color: var(--text-light); margin-bottom: 20px;">
+                            Protect your admin account with Google Authenticator. You will need an authenticator app on your phone.
+                        </p>
+                        <form method="POST" action="">
+                            <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
+                            <button type="submit" name="enable_2fa" class="btn btn-primary">
+                                <i class="fas fa-mobile-alt"></i> Enable Two-Factor Authentication
+                            </button>
+                        </form>
+                    <?php endif; ?>
                 </div>
             </main>
         </div>

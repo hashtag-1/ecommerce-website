@@ -9,7 +9,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['logout'])) {
         redirect('login.php');
     }
     
-    if (isAdminLoggedIn()) {
+    if (isAdminLoggedIn() || isAdmin2FAPending()) {
+        clearAdmin2FASession();
         logoutAdmin();
         setFlashMessage('You have been logged out from admin panel.', 'success');
     }
@@ -23,7 +24,8 @@ if (isset($_GET['logout'])) {
         redirect('login.php');
     }
     
-    if (isAdminLoggedIn()) {
+    if (isAdminLoggedIn() || isAdmin2FAPending()) {
+        clearAdmin2FASession();
         logoutAdmin();
         setFlashMessage('You have been logged out from admin panel.', 'success');
     }
