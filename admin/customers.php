@@ -7,6 +7,17 @@ if (!isAdminLoggedIn()) {
     redirect('login.php');
 }
 
+if (isset($_GET['delete'])) {
+    if (!validateCsrfToken($_GET['csrf_token'] ?? '')) {
+        setFlashMessage('Invalid security token. Please try again.', 'error');
+    } else {
+        $del_id = (int)$_GET['delete'];
+        deleteUser($del_id);
+        setFlashMessage('User deleted successfully', 'success');
+    }
+    redirect('customers.php');
+}
+
 $page_title = 'Manage Customers - Seed2Greens Admin';
 $users = getAllUsers();
 ?>
@@ -53,6 +64,12 @@ $users = getAllUsers();
             </header>
             
             <main class="admin-content">
+                <?php if (isset($_SESSION['flash_message'])): ?>
+                    <div class="flash-message flash-<?php echo $_SESSION['flash_type'] ?? 'success'; ?>" style="border-radius: 8px; margin-bottom: 20px; padding: 12px;">
+                        <?php echo $_SESSION['flash_message']; unset($_SESSION['flash_message'], $_SESSION['flash_type']); ?>
+                    </div>
+                <?php endif; ?>
+
                 <div class="admin-card">
                     <table class="data-table">
                         <thead>
@@ -76,7 +93,10 @@ $users = getAllUsers();
                                         <td><?php echo sanitize($user['email']); ?></td>
                                         <td><?php echo sanitize($user['phone']); ?></td>
                                         <td><?php echo date('M d, Y', strtotime($user['created_at'])); ?></td>
-                                        <td><a href="customer-details.php?id=<?php echo $user['id']; ?>" class="btn btn-primary btn-sm">View Details</a></td>
+                                        <td>
+                                            <a href="customer-details.php?id=<?php echo $user['id']; ?>" class="btn btn-primary btn-sm">View Details</a>
+                                            <button type="button" class="btn btn-danger btn-sm" onclick="confirmDeleteUser(<?php echo $user['id']; ?>)">Delete</button>
+                                        </td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
@@ -86,6 +106,64 @@ $users = getAllUsers();
             </main>
         </div>
     </div>
+
+    <div id="deleteUserModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
+        <div style="background: #fff; padding: 24px; border-radius: 8px; max-width: 380px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+            <p id="deleteUserModalText" style="margin: 0 0 20px; font-size: 15px; color: #333;"></p>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeDeleteUserModal()">Cancel</button>
+                <button type="button" id="deleteUserConfirmBtn" class="btn btn-danger btn-sm">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const deleteUserCsrfToken = '<?php echo generateCsrfToken(); ?>';
+        let deleteUserTargetId = null;
+        const deleteUserModal = document.getElementById('deleteUserModal');
+        const deleteUserModalText = document.getElementById('deleteUserModalText');
+        const deleteUserConfirmBtn = document.getElementById('deleteUserConfirmBtn');
+
+        function confirmDeleteUser(id) {
+            deleteUserTargetId = id;
+            deleteUserModalText.textContent = 'Are you sure to delete this user?';
+            deleteUserConfirmBtn.textContent = 'Continue';
+            deleteUserConfirmBtn.onclick = showDeleteUserWarning;
+            openDeleteUserModal();
+        }
+
+        function showDeleteUserWarning() {
+            deleteUserModalText.textContent = "You won't be able to recover this data once you delete.";
+            deleteUserConfirmBtn.textContent = 'Confirm Delete';
+            deleteUserConfirmBtn.onclick = doDeleteUser;
+            openDeleteUserModal();
+        }
+
+        function doDeleteUser() {
+            window.location.href = 'customers.php?delete=' + encodeURIComponent(deleteUserTargetId) + '&csrf_token=' + encodeURIComponent(deleteUserCsrfToken);
+        }
+
+        function openDeleteUserModal() {
+            deleteUserModal.style.display = 'flex';
+        }
+
+        function closeDeleteUserModal() {
+            deleteUserModal.style.display = 'none';
+            deleteUserTargetId = null;
+        }
+
+        deleteUserModal.addEventListener('click', function(e) {
+            if (e.target === deleteUserModal) {
+                closeDeleteUserModal();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && deleteUserModal.style.display === 'flex') {
+                closeDeleteUserModal();
+            }
+        });
+    </script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
