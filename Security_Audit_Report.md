@@ -3153,4 +3153,217 @@ Validation matches database column constraints. |
 
 ---
 
+## Database Security
+
+### Methodology
+
+The database layer was audited across `config/database.php` (connection configuration), `database/database.sql` (schema design), and all PHP files that execute database queries. The audit evaluated connection credentials, prepared statement usage, SQL injection risks, foreign key constraints, transaction atomicity, error handling, password hashing, and sensitive data storage patterns.
+
+---
+
+### 1. Database Connection Configuration
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `config/database.php:33-61` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | The PDO connection is configured with security-hardening options: `ATTR_ERRMODE => ERRMODE_EXCEPTION` (prevents silent failures), `ATTR_EMULATE_PREPARES => false` (forces native prepared statements), and `charset=utf8mb4` (prevents encoding-based attacks). The DSN uses `DB_HOST`, `DB_USER`, `DB_PASS`, and `DB_PORT` loaded from environment variables via `loadEnv()`. |
+| **Verification** | Inspect PDO options array in `config/database.php`. Confirm `EMULATE_PREPARES => false` and `ERRMODE_EXCEPTION`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 2. Database Credentials and User Permissions
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `.env`, `config/database.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Database credentials are loaded from `.env` and the application connects using the Aiven-provided `avnadmin` user. The `.env` file is excluded from git and protected from HTTP access. The application does not hardcode any credentials. |
+| **Verification** | Confirm credentials come from `getenv()` in `config/database.php`. Confirm `.env` is git-ignored. |
+| **Status** | **Requires Manual Verification** (Aiven database user permissions should be verified to follow least-privilege: `SELECT`, `INSERT`, `UPDATE`, `DELETE` on the `seed2greens` database only. The `avnadmin` user may have broader administrative permissions depending on Aiven configuration.) |
+
+---
+
+### 3. Consistent Use of Prepared Statements
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | All PHP files executing SQL |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Every database query that incorporates user input uses PDO prepared statements with bound parameters (`$db->prepare()` + `$stmt->execute($params)`). The only `query()` and `exec()` calls are for static SQL without user input: `SHOW COLUMNS FROM orders LIKE 'receipt_data'`, `ALTER TABLE orders ADD COLUMN...`, and `SELECT COUNT(*)` aggregate queries in `getAdminStats()`. The `searchProducts()` function correctly parameterizes the `LIKE` search term and optional category/limit filters. |
+| **Verification** | Search all PHP files for `prepare(` with user-supplied values. Confirm no string concatenation of `$_GET`, `$_POST`, or `$_SESSION` values into SQL queries. |
+| **Status** | **Already Secure** |
+
+---
+
+### 4. SQL Injection Risk Assessment
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | All database-accessing PHP files |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | No SQL injection vulnerabilities were found. All user-supplied values (IDs, search terms, quantities, prices, emails, status filters) are either cast to integers, sanitized, or passed as bound parameters to prepared statements. The `searchProducts()` function builds dynamic SQL with conditional `WHERE` clauses but always uses parameterized execution. The `removeCartItemsByProductIds()` function dynamically builds placeholder lists for `IN` clauses but validates all IDs as integers before query construction. |
+| **Verification** | Review all `prepare()` calls for user input. Confirm no `eval()`, no string interpolation of user input into SQL, and no `mysql_*` functions. |
+| **Status** | **Already Secure** |
+
+---
+
+### 5. Foreign Key Constraints and Referential Integrity
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `database/database.sql` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | The schema defines foreign keys on all relational tables:
+- `products.category_id` → `categories(id)` `ON DELETE RESTRICT ON UPDATE CASCADE`
+- `cart.user_id` → `users(id)` `ON DELETE CASCADE ON UPDATE CASCADE`
+- `cart.product_id` → `products(id)` `ON DELETE CASCADE ON UPDATE CASCADE`
+- `wishlist.user_id` → `users(id)` `ON DELETE CASCADE ON UPDATE CASCADE`
+- `wishlist.product_id` → `products(id)` `ON DELETE CASCADE ON UPDATE CASCADE`
+- `orders.user_id` → `users(id)` `ON DELETE RESTRICT ON UPDATE CASCADE`
+- `order_items.order_id` → `orders(id)` `ON DELETE CASCADE ON UPDATE CASCADE`
+- `order_items.product_id` → `products(id)` `ON DELETE RESTRICT ON UPDATE CASCADE`
+
+`ON DELETE RESTRICT` on `orders.user_id` and `order_items.product_id` prevents accidental deletion of users with order history or products with order history, preserving audit trails. `ON DELETE CASCADE` on cart/wishlist ensures cleanup when users or products are removed. |
+| **Verification** | Inspect `database/database.sql` for `FOREIGN KEY` declarations. Confirm `ON DELETE` and `ON UPDATE` actions are appropriate for each relationship. |
+| **Status** | **Already Secure** |
+
+---
+
+### 6. Transaction Usage for Data Integrity
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/auth.php:placeOrder():172-257`, `includes/functions.php:setManualFeaturedReviews():806-822` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | `placeOrder()` wraps order creation and stock deduction in a database transaction with `beginTransaction()`, `commit()`, and `rollBack()`. If any step fails (insufficient stock, DB error), all changes are rolled back, preventing partial orders or inventory corruption. `setManualFeaturedReviews()` also uses a transaction to ensure the featured-review reset and re-application are atomic. |
+| **Verification** | Inspect `placeOrder()` and `setManualFeaturedReviews()` for `beginTransaction()` / `commit()` / `rollBack()` patterns. Confirm rollback occurs on exceptions. |
+| **Status** | **Already Secure** |
+
+---
+
+### 7. Password Hashing and Storage
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/functions.php:115-121`, `includes/auth.php:10-20`, `includes/auth.php:62-84` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Passwords are hashed using `password_hash($password, PASSWORD_DEFAULT)` (bcrypt with automatic cost adjustment). Verification uses `password_verify()`. The `users.password` and `admin.password` columns are `VARCHAR(255)`, which accommodates bcrypt hashes. No plaintext passwords are stored. Password changes require current password verification and strength validation. |
+| **Verification** | Inspect `hashPassword()` and `verifyPassword()` implementations. Confirm `password_hash()` and `password_verify()` are used. Confirm no plaintext password storage. |
+| **Status** | **Already Secure** |
+
+---
+
+### 8. Sensitive Data Storage in Database
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `database/database.sql`, `includes/auth.php:placeOrder()` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Sensitive data stored in the database is properly handled:
+- **Passwords**: Stored as bcrypt hashes, never plaintext.
+- **Receipts**: Stored as base64-encoded blobs in `orders.receipt_data` (MEDIUMTEXT), accessible only to authenticated admins via `admin/receipt.php`.
+- **Payment methods**: Stored as plaintext strings (`Cash on Delivery`, `eSewa`, `Khalti`) — acceptable for this use case.
+- **Customer PII**: Name, email, phone, address stored in `orders` table for fulfillment — standard for e-commerce.
+- **Admin credentials**: Stored in separate `admin` table with hashed passwords. |
+| **Verification** | Inspect database schema for sensitive columns. Confirm `password` columns use `VARCHAR(255)` for hashes. Confirm no plaintext secrets in `orders` or `users` tables. |
+| **Status** | **Already Secure** |
+
+---
+
+### 9. Database Error Handling and Information Leakage
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `config/database.php:57-60`, `includes/auth.php:265-269`, `includes/functions.php:452-454`, `includes/functions.php:819-822`, `api/submit_review.php:36-38`, `api/get_reviews.php:12-14` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | All database and application errors are handled generically:
+- **Connection failures**: User sees "Database Connection Failed. Please try again later." Server logs generic alert (no PDO exception details).
+- **Order placement failures**: Caught in `placeOrder()`, transaction rolled back, generic error returned to user. Exception message is NOT stored in session or displayed.
+- **Review submission failures**: Generic JSON error returned.
+- **User deletion failures**: Returns `false` silently; admin sees generic flash message.
+- **Featured review update failures**: Transaction rolled back, returns `false` silently.
+
+No SQL errors, table names, column names, or stack traces are exposed to end users. |
+| **Verification** | Trigger database errors (e.g., disconnect DB, violate constraints) and confirm responses contain no SQL details. |
+| **Status** | **Already Secure** |
+
+---
+
+### 10. Receipt Data Storage and Access
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/auth.php:placeOrder():215-226`, `admin/receipt.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Payment receipts are stored as base64-encoded blobs in the `orders` table (`receipt_data`, `receipt_mime`, `receipt_type`). The `receipt.php` endpoint serves these only to authenticated admins (`isAdminLoggedIn()`). The blob is not exposed in API responses, order listing pages, or customer-facing views. The `getOrderById()` function explicitly excludes `receipt_data` from its SELECT to keep responses lightweight. |
+| **Verification** | Confirm `receipt_data` is not returned in `getOrderById()` or `getUserOrders()`. Confirm `admin/receipt.php` requires admin authentication. |
+| **Status** | **Already Secure** |
+
+---
+
+### 11. Dynamic Column Migration in placeOrder()
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/auth.php:215-220` |
+| **Root Cause** | `placeOrder()` checks for the existence of `receipt_data` column using `SHOW COLUMNS FROM orders LIKE 'receipt_data'` and dynamically adds the column if missing via `ALTER TABLE`. |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | This is a convenience migration mechanism for backward compatibility. The `ALTER TABLE` is executed as a static string with no user input, so it is not vulnerable to injection. However, running DDL inside a transaction is not supported by MySQL's InnoDB (DDL causes implicit commit), which means if the ALTER succeeds but a later step fails, the schema change persists even though the transaction rolls back. This is a minor data integrity concern, not a security vulnerability. |
+| **Verification** | Inspect `placeOrder()` for the `SHOW COLUMNS` / `ALTER TABLE` logic. Confirm no user input is concatenated. |
+| **Status** | **Requires Manual Verification** (recommend moving the ALTER TABLE to a proper migration script outside the transaction, or removing it if the schema is already deployed) |
+
+---
+
+## Summary
+
+**0 confirmed database security issues were identified and fixed. 2 items require manual verification.**
+
+| Category | Count | Status |
+|----------|-------|--------|
+| Database user permissions | 0 | Requires Manual Verification |
+| Prepared statement consistency | 0 | Already Secure |
+| SQL injection risk | 0 | Already Secure |
+| Foreign key constraints | 0 | Already Secure |
+| Transaction usage | 0 | Already Secure |
+| Password hashing | 0 | Already Secure |
+| Sensitive data storage | 0 | Already Secure |
+| Error handling / info leakage | 0 | Already Secure |
+| Receipt data access | 0 | Already Secure |
+| Dynamic column migration | 1 | Requires Manual Verification |
+
+---
+
+## Recommendations
+
+1. **Verify database user permissions**: Ensure the Aiven MySQL user has only `SELECT`, `INSERT`, `UPDATE`, `DELETE` on the `seed2greens` database. Remove any unnecessary `DROP`, `ALTER`, `CREATE` permissions in production.
+2. **Move ALTER TABLE to migration**: Remove the dynamic `ALTER TABLE` from `placeOrder()` and run it as a one-time schema migration if needed.
+3. **Enable query logging for audit**: Consider enabling slow query logging or general query logging (temporarily) to verify that all production queries use prepared statements.
+4. **Add database backup encryption**: If Aiven backups are not already encrypted at rest, enable encryption for backup storage.
+5. **Consider row-level security**: For multi-tenant isolation, consider MySQL `PROXY_USER` or application-level row filtering (already done via `user_id` checks) for defense-in-depth.
+
+---
+
 *End of Report*
