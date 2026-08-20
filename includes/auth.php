@@ -155,11 +155,23 @@ function placeOrder($user_id, $customer_name, $customer_email, $customer_phone, 
         $delivery_fee = 50.00;
         $total_amount = $subtotal + $delivery_fee;
         
-        $stmt = $db->prepare("
-            INSERT INTO orders (user_id, customer_name, customer_email, customer_phone, customer_address, total_amount, delivery_fee, payment_method, receipt_data, receipt_mime, receipt_type)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        $stmt->execute([$user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $total_amount, $delivery_fee, $payment_method, $receipt_data, $receipt_mime, $receipt_type]);
+        $stmt = $db->query("SHOW COLUMNS FROM orders LIKE 'receipt_data'");
+        $hasReceiptColumns = (bool)$stmt->fetch();
+        
+        if ($hasReceiptColumns) {
+            $stmt = $db->prepare("
+                INSERT INTO orders (user_id, customer_name, customer_email, customer_phone, customer_address, total_amount, delivery_fee, payment_method, receipt_data, receipt_mime, receipt_type)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([$user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $total_amount, $delivery_fee, $payment_method, $receipt_data, $receipt_mime, $receipt_type]);
+        } else {
+            $stmt = $db->prepare("
+                INSERT INTO orders (user_id, customer_name, customer_email, customer_phone, customer_address, total_amount, delivery_fee, payment_method)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $stmt->execute([$user_id, $customer_name, $customer_email, $customer_phone, $customer_address, $total_amount, $delivery_fee, $payment_method]);
+        }
+        
         $order_id = $db->lastInsertId();
         
         foreach ($cart_items as $item) {
@@ -182,6 +194,7 @@ function placeOrder($user_id, $customer_name, $customer_email, $customer_phone, 
         
     } catch (Exception $e) {
         $db->rollBack();
+        $_SESSION['order_debug_error'] = $e->getMessage();
         return false;
     }
 }
