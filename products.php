@@ -24,7 +24,7 @@ $categories = getAllCategories();
         
         <!-- Search Bar -->
         <form method="GET" action="products.php" class="search-bar">
-            <input type="text" name="search" placeholder="Search products..." value="<?php echo $search; ?>" id="searchInput">
+            <input type="text" name="search" placeholder="Search products..." value="<?php echo htmlspecialchars($search, ENT_QUOTES); ?>" id="searchInput">
             <select name="category">
                 <option value="">All Categories</option>
                 <?php foreach ($categories as $cat): ?>

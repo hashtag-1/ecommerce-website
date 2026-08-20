@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['register'])) {
         
         <?php if ($error): ?>
             <div class="flash-message flash-error" style="border-radius: var(--radius); margin-bottom: 20px; padding: 12px;">
-                <?php echo $error; ?>
+                <?php echo sanitize($error); ?>
             </div>
         <?php endif; ?>
         

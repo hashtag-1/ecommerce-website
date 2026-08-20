@@ -114,7 +114,7 @@ if ($search) {
                                         <td><?php echo $product['stock_quantity']; ?> <?php echo sanitize($product['unit']); ?></td>
                                         <td>
                                             <span class="status status-<?php echo ($product['status'] == 'active') ? 'delivered' : 'cancelled'; ?>">
-                                                <?php echo ucfirst($product['status']); ?>
+                                                <?php echo sanitize(ucfirst($product['status'])); ?>
                                             </span>
                                         </td>
                                         <td>

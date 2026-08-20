@@ -145,9 +145,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <!-- Flash Messages -->
     <?php $flash = getFlashMessage(); ?>
     <?php if ($flash): ?>
-        <div class="flash-message flash-<?php echo $flash['type']; ?>">
+        <div class="flash-message flash-<?php echo sanitize($flash['type']); ?>">
             <div class="container">
-                <?php echo $flash['message']; ?>
+                <?php echo sanitize($flash['message']); ?>
                 <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
             </div>
         </div>

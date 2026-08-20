@@ -71,7 +71,7 @@ $order_items = getOrderItems($order_id);
                     </div>
                     <div class="cart-summary-row">
                         <span class="label">Status</span>
-                        <span class="value"><span class="status status-<?php echo strtolower($order['status']); ?>"><?php echo $order['status']; ?></span></span>
+                        <span class="value"><span class="status status-<?php echo strtolower($order['status']); ?>"><?php echo sanitize($order['status']); ?></span></span>
                     </div>
                     <div class="cart-summary-row">
                         <span class="label">Payment</span>

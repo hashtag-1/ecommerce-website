@@ -1057,26 +1057,26 @@ function initFaqAccordion() {
         const count = data.count || 0;
 
         if (count === 0) {
-            searchResults.innerHTML = '<div class="search-no-results">No products found for "' + query + '"</div>';
+            searchResults.innerHTML = '<div class="search-no-results">No products found for "' + escapeHtml(query) + '"</div>';
         } else {
             let html = '';
             results.forEach(function(product) {
                 const imgSrc = getProductImageSrc(product);
                 const imgHtml = imgSrc 
-                    ? '<img src="' + imgSrc + '" alt="' + product.name + '" loading="lazy">'
+                    ? '<img src="' + imgSrc + '" alt="' + escapeHtml(product.name) + '" loading="lazy">'
                     : '<i class="fas fa-box"></i>';
                 
                 html += '<a href="product.php?id=' + product.id + '" class="search-item">' +
                     '<div class="search-item-image">' + imgHtml + '</div>' +
                     '<div class="search-item-info">' +
-                        '<div class="search-item-name">' + product.name + '</div>' +
-                        '<div class="search-item-category">' + (product.category || '') + '</div>' +
+                        '<div class="search-item-name">' + escapeHtml(product.name) + '</div>' +
+                        '<div class="search-item-category">' + escapeHtml(product.category || '') + '</div>' +
                     '</div>' +
                 '</a>';
             });
 
             if (count >= 5) {
-                html += '<div class="search-view-all" data-query="' + query + '">View all search results →</div>';
+                html += '<div class="search-view-all" data-query="' + escapeHtml(query) + '">View all search results →</div>';
             }
 
             searchResults.innerHTML = html;

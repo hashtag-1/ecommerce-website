@@ -97,7 +97,7 @@ if (isset($_GET['delete'])) {
             <main class="admin-content">
                 <?php if ($error): ?>
                     <div class="flash-message flash-error" style="border-radius: 8px; margin-bottom: 20px; padding: 12px;">
-                        <?php echo $error; ?>
+                        <?php echo sanitize($error); ?>
                     </div>
                 <?php endif; ?>
                 
@@ -153,7 +153,7 @@ if (isset($_GET['delete'])) {
                                         <td><?php echo sanitize(substr($category['description'], 0, 60)); ?>...</td>
                                         <td>
                                             <span class="status status-<?php echo ($category['status'] == 'active') ? 'delivered' : 'cancelled'; ?>">
-                                                <?php echo ucfirst($category['status']); ?>
+                                                <?php echo sanitize(ucfirst($category['status'])); ?>
                                             </span>
                                         </td>
                                         <td><?php echo date('M d, Y', strtotime($category['created_at'])); ?></td>

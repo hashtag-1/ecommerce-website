@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_product'])) {
                 <div class="admin-card" style="max-width: 800px;">
                     <?php if ($error): ?>
                         <div class="flash-message flash-error" style="border-radius: 8px; margin-bottom: 20px; padding: 12px;">
-                            <?php echo $error; ?>
+                            <?php echo sanitize($error); ?>
                         </div>
                     <?php endif; ?>
                     

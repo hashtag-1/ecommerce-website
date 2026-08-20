@@ -51,7 +51,7 @@ if (isLoggedIn()) {
                 
                 <div class="product-stock <?php echo ($product['stock_quantity'] > 0) ? 'in-stock' : 'out-of-stock'; ?>">
                     <i class="fas fa-check-circle"></i>
-                    <?php echo ($product['stock_quantity'] > 0) ? 'In Stock (' . $product['stock_quantity'] . ' ' . $product['unit'] . ')' : 'Out of Stock'; ?>
+                    <?php echo ($product['stock_quantity'] > 0) ? 'In Stock (' . $product['stock_quantity'] . ' ' . sanitize($product['unit']) . ')' : 'Out of Stock'; ?>
                 </div>
                 
                 <div class="product-detail-description">

@@ -165,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['admin_login'])) {
             
             <?php if ($error): ?>
                 <div class="flash-message flash-error">
-                    <?php echo $error; ?>
+                    <?php echo sanitize($error); ?>
                 </div>
             <?php endif; ?>
             

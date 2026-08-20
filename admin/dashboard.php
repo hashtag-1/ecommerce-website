@@ -151,7 +151,7 @@ $recent_activity = getRecentActivity(8);
                                                 <small style="color: var(--text-light);"><?php echo sanitize($order['customer_email']); ?></small>
                                             </td>
                                             <td><strong><?php echo formatAdminCurrency($order['total_amount']); ?></strong></td>
-                                            <td><span class="status status-<?php echo strtolower($order['status']); ?>"><?php echo $order['status']; ?></span></td>
+                                            <td><span class="status status-<?php echo strtolower($order['status']); ?>"><?php echo sanitize($order['status']); ?></span></td>
                                             <td><?php echo date('M d, Y', strtotime($order['created_at'])); ?></td>
                                             <td><a href="order-details.php?id=<?php echo $order['id']; ?>" class="btn btn-primary btn-sm">View</a></td>
                                         </tr>

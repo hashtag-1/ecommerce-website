@@ -94,8 +94,8 @@ $activeTab = $_GET['tab'] ?? 'delete';
             
             <main class="admin-content">
                 <?php if (isset($_SESSION['flash_message'])): ?>
-                    <div class="flash-message flash-<?php echo $_SESSION['flash_type'] ?? 'success'; ?>" style="border-radius: 8px; margin-bottom: 20px; padding: 12px;">
-                        <?php echo $_SESSION['flash_message']; unset($_SESSION['flash_message'], $_SESSION['flash_type']); ?>
+                    <div class="flash-message flash-<?php echo sanitize($_SESSION['flash_type'] ?? 'success'); ?>" style="border-radius: 8px; margin-bottom: 20px; padding: 12px;">
+                        <?php echo sanitize($_SESSION['flash_message']); unset($_SESSION['flash_message'], $_SESSION['flash_type']); ?>
                     </div>
                 <?php endif; ?>
 

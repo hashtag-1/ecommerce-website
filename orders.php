@@ -51,7 +51,7 @@ $orders = getUserOrders($user_id);
                                 <td><?php echo date('M d, Y', strtotime($order['order_date'])); ?></td>
                                 <td><?php echo $items_count; ?> item(s)</td>
                                 <td><strong>Rs. <?php echo number_format($order['total_amount'], 2); ?></strong></td>
-                                <td><span class="status status-<?php echo strtolower($order['status']); ?>"><?php echo $order['status']; ?></span></td>
+                                <td><span class="status status-<?php echo strtolower($order['status']); ?>"><?php echo sanitize($order['status']); ?></span></td>
                                 <td>
                                     <a href="order-details.php?id=<?php echo $order['id']; ?>" class="btn btn-primary btn-sm">View Details</a>
                                 </td>

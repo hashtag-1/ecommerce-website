@@ -107,7 +107,7 @@ $order_history = getCustomerOrderHistory($customer_id);
                                             <td><strong>#<?php echo str_pad($order['id'], 4, '0', STR_PAD_LEFT); ?></strong></td>
                                             <td><?php echo date('M d, Y', strtotime($order['created_at'])); ?></td>
                                             <td><?php echo formatAdminCurrency($order['total_amount']); ?></td>
-                                            <td><span class="status status-<?php echo strtolower($order['status']); ?>"><?php echo $order['status']; ?></span></td>
+                                            <td><span class="status status-<?php echo strtolower($order['status']); ?>"><?php echo sanitize($order['status']); ?></span></td>
                                             <td><a href="order-details.php?id=<?php echo $order['id']; ?>" class="btn btn-primary btn-sm">View</a></td>
                                         </tr>
                                     <?php endforeach; ?>
