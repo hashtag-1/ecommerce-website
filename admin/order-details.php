@@ -128,11 +128,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_status'])) {
                                         <span class="label">Receipt:</span>
                                         <span class="value">
                                             <?php if ($order['receipt_type'] === 'pdf'): ?>
-                                                <a href="receipt.php?id=<?php echo $order['id']; ?>" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none;">
+                                                <button type="button" class="btn btn-secondary btn-sm receipt-view-btn" data-type="pdf" data-url="receipt.php?id=<?php echo $order['id']; ?>" style="cursor: pointer;">
                                                     <i class="fas fa-file-pdf"></i> View PDF Receipt
-                                                </a>
+                                                </button>
                                             <?php else: ?>
-                                                <img src="receipt.php?id=<?php echo $order['id']; ?>" alt="Payment Receipt" style="max-width: 200px; height: auto; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer;" onclick="window.open('receipt.php?id=<?php echo $order['id']; ?>', '_blank')">
+                                                <img src="receipt.php?id=<?php echo $order['id']; ?>" alt="Payment Receipt" class="receipt-view-btn" data-type="image" data-url="receipt.php?id=<?php echo $order['id']; ?>" style="max-width: 200px; height: auto; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer;">
                                             <?php endif; ?>
                                         </span>
                                     </div>
@@ -184,6 +184,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_status'])) {
         </div>
     </div>
 
+    <div id="receiptModal" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; flex-direction: column; padding: 20px;">
+        <button id="receiptModalClose" style="position: absolute; top: 15px; right: 20px; color: #fff; background: transparent; border: none; font-size: 28px; cursor: pointer; line-height: 1;">&times;</button>
+        <div id="receiptModalContent" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; max-width: 90vw; max-height: 90vh;">
+            <img id="receiptModalImage" src="" alt="Payment Receipt" style="max-width: 100%; max-height: 85vh; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: none;">
+            <iframe id="receiptModalIframe" src="" style="width: 90vw; height: 85vh; border: none; border-radius: 8px; background: #fff; display: none;"></iframe>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const toggle = document.getElementById('mobileToggle');
@@ -201,6 +209,52 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_status'])) {
                     overlay.classList.remove('active');
                 });
             }
+
+            const modal = document.getElementById('receiptModal');
+            const modalImage = document.getElementById('receiptModalImage');
+            const modalIframe = document.getElementById('receiptModalIframe');
+            const modalClose = document.getElementById('receiptModalClose');
+
+            document.querySelectorAll('.receipt-view-btn').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const type = this.getAttribute('data-type');
+                    const url = this.getAttribute('data-url');
+
+                    modalImage.style.display = 'none';
+                    modalIframe.style.display = 'none';
+
+                    if (type === 'pdf') {
+                        modalIframe.src = url;
+                        modalIframe.style.display = 'block';
+                    } else {
+                        modalImage.src = url;
+                        modalImage.style.display = 'block';
+                    }
+
+                    modal.style.display = 'flex';
+                });
+            });
+
+            function closeReceiptModal() {
+                modal.style.display = 'none';
+                modalIframe.src = '';
+                modalImage.src = '';
+            }
+
+            modalClose.addEventListener('click', closeReceiptModal);
+
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeReceiptModal();
+                }
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modal.style.display === 'flex') {
+                    closeReceiptModal();
+                }
+            });
         });
     </script>
 </body>
