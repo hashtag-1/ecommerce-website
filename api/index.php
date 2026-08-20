@@ -18,10 +18,11 @@ $blocked = [
     'config/',
     'includes/',
     'database/',
+    'api/index.php',
 ];
 
-foreach ($blocked as $folder) {
-    if (strpos($requested, $folder) === 0) {
+foreach ($blocked as $blocked_path) {
+    if ($requested === $blocked_path || strpos($requested, $blocked_path) === 0) {
         http_response_code(404);
         exit('Not Found');
     }

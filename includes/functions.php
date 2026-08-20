@@ -357,7 +357,8 @@ function getProductImage($product) {
         'Gardening Gloves' => 'gardening-gloves.jpg',
     ];
 
-    return $map[$name] ?? ($product['image'] ?? $product['product_image'] ?? '');
+    $image = $map[$name] ?? ($product['image'] ?? $product['product_image'] ?? '');
+    return basename($image);
 }
 
 function getCategoryImage($category) {

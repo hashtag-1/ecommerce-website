@@ -1049,7 +1049,9 @@ function initFaqAccordion() {
     let currentQuery = '';
 
     function getProductImageSrc(product) {
-        const image = product.image || '';
+        let image = product.image || '';
+        if (!image) return '';
+        image = image.replace(/\\/g, '/').replace(/\.\.\//g, '').replace(/^\/+/, '');
         if (!image) return '';
         if (image.startsWith('http')) return image;
         if (image.startsWith('img/')) return image;

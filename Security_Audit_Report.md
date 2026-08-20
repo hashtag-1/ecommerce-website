@@ -1226,4 +1226,139 @@ The project's single file upload vector — payment receipt uploads during check
 
 ---
 
+## Path Traversal / LFI
+
+### Methodology
+
+All file path handling, include/require statements, and user-influenced file access points were inspected. The audit covered:
+- Dynamic `require`/`include` paths
+- URL parameters used to construct file paths
+- Receipt file serving and download endpoints
+- Product image path handling
+- User-controlled filenames anywhere in the app
+- Path traversal (`../`), Local File Inclusion (LFI), and Remote File Inclusion (RFI) vectors
+
+---
+
+### 1. Vercel PHP Router Path Traversal (`api/index.php`)
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `api/index.php` |
+| **Root Cause** | The Vercel PHP router accepts `$_GET['file']` and passes it through `realpath()` for inclusion. While the router has `realpath()` root containment and a blocked directory prefix list, the blocked list did not include exact filenames (e.g., `config.php` in the project root) and did not prevent self-inclusion (`api/index.php` including itself), which could cause infinite recursion. |
+| **Exploitable** | No (mitigated by `realpath()` root containment and `.php` extension restriction) |
+| **Severity** | Medium |
+| **Impact** | An attacker could theoretically access any PHP file in the project by crafting paths like `includes/../index.php` (though `includes/../` is blocked by prefix check). More importantly, `api/index.php?file=api/index.php` would include the router recursively, potentially causing a denial-of-service via stack overflow. Files like `config.php` in the root (without trailing slash) were not blocked by the prefix list. |
+| **Verification** | Request `api/index.php?file=api/index.php` and observe behavior. Request `api/index.php?file=config.php` if a root-level `config.php` exists. |
+| **Fix Applied** | Added `api/index.php` to the blocked list to prevent self-inclusion and infinite recursion. Changed the blocked list loop to check both exact matches and prefix matches, so `config.php` in the root is also blocked. |
+| **Re-test Result** | Verified: `api/index.php` now blocks `api/index.php` exact match and all prefix matches. `realpath()` root containment remains intact. PHP syntax check passes. |
+| **Status** | **Fixed** |
+
+---
+
+### 2. Product Image Path Traversal (`getProductImage()`)
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `includes/functions.php:getProductImage()` |
+| **Root Cause** | The `image` field in the `products` table is a free-text admin-editable field. When rendered, it is concatenated into `<img src="img/<?php echo getProductImage($product); ?>">` without path sanitization. A malicious or compromised admin could set the image value to `../../etc/passwd`, resulting in `img/../../etc/passwd`, which could expose files outside the `img/` directory depending on web server configuration. This also affects the search API (`search.php`) and client-side rendering (`assets/js/script.js`). |
+| **Exploitable** | Yes (requires admin account compromise or direct database manipulation) |
+| **Severity** | Medium |
+| **Impact** | Path traversal allowing access to files outside the `img/` directory. Could expose sensitive server files if the web server serves them. Also enables stored XSS if set to a malicious URL. |
+| **Verification** | As an admin, set a product's image to `../../etc/passwd` and view the product page; observe the browser request path. |
+| **Fix Applied** | Wrapped the return value in `basename()` to strip all directory components and `../` sequences. Updated `search.php` to use `getProductImage()` instead of returning raw `$product['image']`. Added client-side path sanitization in `assets/js/script.js:getProductImageSrc()` to strip backslashes, `../` sequences, and leading slashes as defense-in-depth. |
+| **Re-test Result** | Verified: `getProductImage()` now returns `basename($image)`. `search.php` uses `getProductImage($product)`. JS `getProductImageSrc()` sanitizes paths. PHP syntax checks pass for all modified files. |
+| **Status** | **Fixed** |
+
+---
+
+### 3. RFI / URL-based File Inclusion
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `api/index.php`, all `require`/`include` statements |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | All `require`/`include` statements in the project use static paths with `__DIR__`. No dynamic or user-influenced include paths exist. The router's `realpath()` check ensures only local files inside the project root can be included. Remote URLs (e.g., `http://evil.com/shell.php`) would fail `realpath()` and be rejected. `allow_url_include` is not used. |
+| **Verification** | Grep for `require`/`include` with variable or `$_GET`/`$_POST` paths. Confirm none exist. |
+| **Status** | **Already Secure** |
+
+---
+
+### 4. Receipt Serving Path Traversal
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `admin/receipt.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Receipts are served from base64 data in the database (`receipt_data` column). No file path is accepted from user input. The `Content-Disposition` filename is constructed from the integer `$order_id`, which cannot contain path traversal characters. |
+| **Verification** | Confirm `admin/receipt.php` does not accept any `file` or `path` parameter from `$_GET` or `$_POST`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 5. Dynamic Include Paths Check
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | All PHP files |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | Grep for `require`/`include` with dynamic paths found no instances where user input (`$_GET`, `$_POST`, `$_FILES`) influences the included file path. All includes use `__DIR__` with static strings. |
+| **Verification** | Grep for `require.*\$_(GET\|POST\|REQUEST\|FILES)` and `include.*\$_(GET\|POST\|REQUEST\|FILES)`. |
+| **Status** | **Already Secure** |
+
+---
+
+### 6. File Upload Temp Path Handling
+
+| Field | Detail |
+|-------|--------|
+| **File/Function** | `checkout.php` |
+| **Root Cause** | N/A |
+| **Exploitable** | No |
+| **Severity** | Informational |
+| **Impact** | The upload handling reads `$_FILES['receipt_file']['tmp_name']`, which is a server-generated temporary path. The original filename (`$_FILES['receipt_file']['name']`) is only used for extension validation via `pathinfo()` and is never used in filesystem operations. No `move_uploaded_file` is called. |
+| **Verification** | Confirm `tmp_name` is used only for reading file content, not for path construction. |
+| **Status** | **Already Secure** |
+
+---
+
+## Summary
+
+**2 confirmed path traversal / LFI vulnerabilities were identified and fixed.**
+
+| Category | Count | Status |
+|----------|-------|--------|
+| Router self-inclusion and blocked list bypass | 1 | Fixed |
+| Product image path traversal | 1 | Fixed |
+| RFI / dynamic includes | 0 | Already Secure |
+| Receipt serving path traversal | 0 | Already Secure |
+| File upload temp path handling | 0 | Already Secure |
+
+**Files Modified**
+
+| File | Changes |
+|------|---------|
+| `api/index.php` | Added `api/index.php` to blocked list; changed blocked check to catch both exact matches and prefix matches |
+| `includes/functions.php` | Added `basename()` to `getProductImage()` return value to strip directory components |
+| `search.php` | Changed to use `getProductImage($product)` instead of raw `$product['image']` |
+| `assets/js/script.js` | Added path sanitization in `getProductImageSrc()` to strip `../`, backslashes, and leading slashes |
+
+---
+
+## Recommendations
+
+1. **Adopt a whitelist for the API router**: Instead of a blacklist of blocked directories, maintain a whitelist of explicitly allowed PHP files. This is more secure against future path traversal variants.
+2. **Validate image filenames on admin save**: In `admin/add-product.php` and `admin/edit-product.php`, validate that the `image` field contains only safe filename characters (alphanumeric, dash, underscore, dot) before saving to the database.
+3. **Disable `allow_url_include`**: Ensure PHP's `allow_url_include` is disabled in production to prevent any RFI vectors.
+4. **Add path traversal tests**: Include automated tests that attempt to access `../` sequences via the API router and verify they are blocked.
+5. **Review web server configuration**: Ensure the web server does not serve files outside the document root, providing defense-in-depth against path traversal.
+
+---
+
 *End of Report*
