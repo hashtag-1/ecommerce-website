@@ -75,6 +75,7 @@ if (isLoggedIn()) {
                             <form method="POST" action="wishlist.php" style="flex: 1;">
                                 <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
                                 <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
+                                <input type="hidden" name="redirect_to" value="product.php?id=<?php echo $product['id']; ?>">
                                 <button type="submit" name="toggle_wishlist" class="btn btn-secondary btn-lg" style="width: 100%;">
                                     <i class="fas fa-heart" style="color: <?php echo $in_wishlist ? '#dc3545' : ''; ?>;"></i>
                                     <?php echo $in_wishlist ? 'Remove from Wishlist' : 'Add to Wishlist'; ?>
