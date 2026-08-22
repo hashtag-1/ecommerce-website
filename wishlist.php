@@ -85,6 +85,14 @@ $wishlist_items = getWishlistItems($user_id);
                 <?php foreach ($wishlist_items as $item): ?>
                     <div class="product-card">
                         <div class="product-card-image">
+                            <form method="POST" action="wishlist.php" class="wishlist-toggle-form">
+                                <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
+                                <input type="hidden" name="product_id" value="<?php echo $item['product_id']; ?>">
+                                <input type="hidden" name="redirect_to" value="wishlist.php">
+                                <button type="submit" name="toggle_wishlist" class="wishlist-heart-btn" title="Remove from wishlist">
+                                    ❤️
+                                </button>
+                            </form>
                             <img src="img/<?php echo getProductImage($item); ?>" alt="<?php echo sanitize($item['name']); ?>">
                         </div>
                         <div class="product-card-body">

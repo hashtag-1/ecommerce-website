@@ -16,11 +16,6 @@ if (!$product) {
 }
 
 $page_title = $product['name'] . ' - Seed2Greens';
-
-$in_wishlist = false;
-if (isLoggedIn()) {
-    $in_wishlist = isInWishlist($_SESSION['user_id'], $product_id);
-}
 ?>
 
 <?php include __DIR__ . '/includes/header.php'; ?>
@@ -60,33 +55,6 @@ if (isLoggedIn()) {
                 </div>
                 
                 <?php if ($product['stock_quantity'] > 0): ?>
-                    
-                    <div class="product-actions-large">
-                        <form method="POST" action="cart.php" class="add-to-cart-form" style="flex: 1;">
-                            <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
-                            <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                            <input type="hidden" name="quantity" value="1">
-                            <button type="submit" name="add_to_cart" class="btn btn-primary btn-lg add-to-cart-btn" style="width: 100%;">
-                                <i class="fas fa-shopping-cart"></i> Add to Cart
-                            </button>
-                        </form>
-                        
-                        <?php if (isLoggedIn()): ?>
-                            <form method="POST" action="wishlist.php" style="flex: 1;">
-                                <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
-                                <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                                <input type="hidden" name="redirect_to" value="product.php?id=<?php echo $product['id']; ?>">
-                                <button type="submit" name="toggle_wishlist" class="btn btn-secondary btn-lg" style="width: 100%;">
-                                    <i class="fas fa-heart" style="color: <?php echo $in_wishlist ? '#dc3545' : ''; ?>;"></i>
-                                    <?php echo $in_wishlist ? 'Remove from Wishlist' : 'Add to Wishlist'; ?>
-                                </button>
-                            </form>
-                        <?php else: ?>
-                            <a href="login.php" class="btn btn-secondary btn-lg" style="flex: 1;">
-                                <i class="fas fa-heart"></i> Add to Wishlist
-                            </a>
-                        <?php endif; ?>
-                    </div>
                 <?php else: ?>
                     <button class="btn btn-secondary btn-lg" disabled>Out of Stock</button>
                 <?php endif; ?>

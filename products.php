@@ -60,6 +60,19 @@ $categories = getAllCategories();
                 <?php foreach ($products as $product): ?>
                     <div class="product-card">
                         <div class="product-card-image">
+                            <?php if (isLoggedIn()): ?>
+                                <?php $in_wishlist = isInWishlist($_SESSION['user_id'], $product['id']); ?>
+                                <form method="POST" action="wishlist.php" class="wishlist-toggle-form">
+                                    <input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>">
+                                    <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
+                                    <input type="hidden" name="redirect_to" value="<?php echo basename($_SERVER['PHP_SELF']); ?>">
+                                    <button type="submit" name="toggle_wishlist" class="wishlist-heart-btn" title="<?php echo $in_wishlist ? 'Remove from wishlist' : 'Add to wishlist'; ?>">
+                                        <?php echo $in_wishlist ? '❤️' : '♡'; ?>
+                                    </button>
+                                </form>
+                            <?php else: ?>
+                                <a href="login.php" class="wishlist-heart-btn" title="Login to add to wishlist" style="text-decoration: none;">♡</a>
+                            <?php endif; ?>
                             <img src="img/<?php echo getProductImage($product); ?>" alt="<?php echo sanitize($product['name']); ?>">
                         </div>
                         <div class="product-card-body">
