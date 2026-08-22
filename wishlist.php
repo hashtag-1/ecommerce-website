@@ -11,15 +11,37 @@ if (!isLoggedIn()) {
 
 $user_id = $_SESSION['user_id'];
 
+/**
+ * Only allow redirecting back to a handful of known-safe local pages.
+ * Never redirect to whatever raw string was submitted -- that would be
+ * an open-redirect vulnerability (attacker crafts a link that "adds to
+ * wishlist" but actually bounces the victim to an external phishing
+ * site while looking like it came from this site).
+ */
+function getSafeWishlistRedirect() {
+    $target = $_POST['redirect_to'] ?? '';
+
+    // Must be a relative path to one specific known page, optionally
+    // with a numeric id= query param. Anything else falls back to
+    // wishlist.php.
+    if (preg_match('/^(product|products|category|index)\.php(\?id=\d+)?$/', $target)) {
+        return $target;
+    }
+
+    return 'wishlist.php';
+}
+
 // Handle Toggle Wishlist
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['toggle_wishlist'])) {
+    $redirect_to = getSafeWishlistRedirect();
+
     if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
         setFlashMessage('Invalid request. Please try again.', 'error');
-        redirect('wishlist.php');
+        redirect($redirect_to);
     }
-    
+
     $product_id = (int)$_POST['product_id'];
-    
+
     if (isInWishlist($user_id, $product_id)) {
         removeFromWishlist($user_id, $product_id);
         setFlashMessage('Removed from wishlist', 'success');
@@ -27,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['toggle_wishlist'])) {
         addToWishlist($user_id, $product_id);
         setFlashMessage('Added to wishlist', 'success');
     }
-    redirect('wishlist.php');
+    redirect($redirect_to);
 }
 
 // Handle Remove from Wishlist
