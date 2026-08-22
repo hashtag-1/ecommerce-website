@@ -1,11 +1,12 @@
 <?php
-// Seed2Greens - Order Details Page
-$page_title = 'Order Details - Seed2Greens';
-require_once __DIR__ . '/includes/functions.php';
+// Seed2Greens - Admin: Order Details
+$page_title = 'Order Details - Admin';
+require_once __DIR__ . '/../includes/functions.php';
 
-if (!isLoggedIn()) {
-    setFlashMessage('Please login to view order details', 'error');
-    redirect('login.php');
+// FIX: was checking isLoggedIn() (customer session) — same bug as orders.php.
+if (!isAdminLoggedIn()) {
+    setFlashMessage('Please login to access the admin panel', 'error');
+    redirect('admin/login.php');
 }
 
 if (!isset($_GET['id'])) {
@@ -15,12 +16,15 @@ if (!isset($_GET['id'])) {
 $order_id = (int)$_GET['id'];
 $order = getOrderById($order_id);
 
-if (!$order || $order['user_id'] != $_SESSION['user_id']) {
+// FIX: was comparing $order['user_id'] != $_SESSION['user_id'] -- that check
+// makes sense for a CUSTOMER viewing their own order, not for an admin who
+// needs to view any customer's order. Admin just needs the order to exist.
+if (!$order) {
     setFlashMessage('Order not found', 'error');
     redirect('orders.php');
 }
 
-$page_title = 'Order #' . str_pad($order_id, 4, '0', STR_PAD_LEFT) . ' - Seed2Greens';
+$page_title = 'Order #' . str_pad($order_id, 4, '0', STR_PAD_LEFT) . ' - Admin';
 $order_items = getOrderItems($order_id);
 ?>
 
@@ -32,13 +36,12 @@ $order_items = getOrderItems($order_id);
             <h1 class="section-title" style="margin-bottom: 0; text-align: left;">Order Details</h1>
             <a href="orders.php" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Orders</a>
         </div>
-        
+
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 30px;">
-            <!-- Order Items -->
             <div>
                 <div class="cart-summary" style="margin-bottom: 20px;">
                     <h3 style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--primary);">Order Items</h3>
-                    
+
                     <?php foreach ($order_items as $item): ?>
                         <div class="checkout-item">
                             <div class="checkout-item-image">
@@ -55,12 +58,11 @@ $order_items = getOrderItems($order_id);
                     <?php endforeach; ?>
                 </div>
             </div>
-            
-            <!-- Order Info -->
+
             <div>
                 <div class="cart-summary" style="margin-bottom: 20px;">
                     <h3 style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--primary);">Order Information</h3>
-                    
+
                     <div class="cart-summary-row">
                         <span class="label">Order ID</span>
                         <span class="value">#<?php echo str_pad($order['id'], 4, '0', STR_PAD_LEFT); ?></span>
@@ -78,10 +80,10 @@ $order_items = getOrderItems($order_id);
                         <span class="value"><?php echo sanitize($order['payment_method']); ?></span>
                     </div>
                 </div>
-                
+
                 <div class="cart-summary" style="margin-bottom: 20px;">
                     <h3 style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--primary);">Shipping Address</h3>
-                    
+
                     <div class="cart-summary-row">
                         <span class="label">Name</span>
                         <span class="value"><?php echo sanitize($order['customer_name']); ?></span>
@@ -95,10 +97,10 @@ $order_items = getOrderItems($order_id);
                         <span class="value"><?php echo sanitize($order['customer_address']); ?></span>
                     </div>
                 </div>
-                
+
                 <div class="cart-summary">
                     <h3 style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--primary);">Payment Summary</h3>
-                    
+
                     <div class="cart-summary-row">
                         <span class="label">Subtotal</span>
                         <span class="value">Rs. <?php echo number_format($order['total_amount'] - $order['delivery_fee'], 2); ?></span>
