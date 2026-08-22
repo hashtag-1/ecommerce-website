@@ -78,7 +78,7 @@ class Database {
 // they land on different instances). This switches session storage to
 // the shared MySQL database instead, and starts the session right here,
 // once, before any page logic runs.
-require_once __DIR__ . '/../includes/db-session-handler.php';
+require_once __DIR__ . '/../includes/session-handler.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     register_db_session_handler(Database::getInstance()->getConnection());
