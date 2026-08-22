@@ -72,3 +72,15 @@ class Database {
         return $this->connection;
     }
 }
+
+// FIX: Random logout bug (Vercel's serverless functions are stateless --
+// PHP's default file-based sessions don't survive between requests when
+// they land on different instances). This switches session storage to
+// the shared MySQL database instead, and starts the session right here,
+// once, before any page logic runs.
+require_once __DIR__ . '/../includes/db-session-handler.php';
+
+if (session_status() === PHP_SESSION_NONE) {
+    register_db_session_handler(Database::getInstance()->getConnection());
+    session_start();
+}
