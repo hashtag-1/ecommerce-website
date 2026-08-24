@@ -51,7 +51,7 @@ $recent_activity = getRecentActivity(8);
                     <h2>Dashboard</h2>
                 </div>
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <span>Welcome, <?php echo sanitize($_SESSION['admin_name']); ?></span>
+                    <span>Welcome, ADMIN !</span>
                     <form method="POST" action="logout.php" style="display: inline;"><input type="hidden" name="csrf_token" value="<?php echo generateCsrfToken(); ?>"><button type="submit" name="logout" class="btn btn-secondary btn-sm">Logout</button></form>
                 </div>
             </header>
