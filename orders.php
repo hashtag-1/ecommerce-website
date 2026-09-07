@@ -1,7 +1,12 @@
 <?php
 // Seed2Greens - Admin: All Orders
 $page_title = 'Manage Orders - Admin';
-require_once __DIR__ . '/../includes/functions.php';
+define('PROJECT_ROOT', __DIR__);
+$functionsPath = PROJECT_ROOT . '/includes/functions.php';
+if (!file_exists($functionsPath)) {
+    die('Error: Application configuration file missing. Please contact support. Error code: CFG001');
+}
+require_once $functionsPath;
 
 // FIX: was checking isLoggedIn() / $_SESSION['user_id'] (the CUSTOMER
 // session), which is why admins got bounced back to the customer

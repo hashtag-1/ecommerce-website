@@ -1,7 +1,12 @@
 <?php
 // Seed2Greens - Admin: Order Details
 $page_title = 'Order Details - Admin';
-require_once __DIR__ . '/../includes/functions.php';
+define('PROJECT_ROOT', __DIR__);
+$functionsPath = PROJECT_ROOT . '/includes/functions.php';
+if (!file_exists($functionsPath)) {
+    die('Error: Application configuration file missing. Please contact support. Error code: CFG001');
+}
+require_once $functionsPath;
 
 // FIX: was checking isLoggedIn() (customer session) — same bug as orders.php.
 if (!isAdminLoggedIn()) {
